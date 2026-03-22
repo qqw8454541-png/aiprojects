@@ -76,6 +76,8 @@ export const translations = {
     'score.seatManage': '席順変更',
     'score.rotateCW': '順次回転',
     'score.shuffle': 'ランダム',
+    'room.swapActive': '↔ タップで交換先を選択',
+    'room.swapIdle': '↔ カードをタップで2席を交換',
 
     // Result
     'result.title': '結果',
@@ -169,6 +171,8 @@ export const translations = {
     'score.seatManage': '调整座次',
     'score.rotateCW': '顺次轮转',
     'score.shuffle': '随机',
+    'room.swapActive': '↔ 点击选择交换目标',
+    'room.swapIdle': '↔ 点击卡片互换两人座位',
 
     // Result
     'result.title': '结果',
@@ -262,6 +266,8 @@ export const translations = {
     'score.seatManage': 'Change Seats',
     'score.rotateCW': 'Rotate',
     'score.shuffle': 'Shuffle',
+    'room.swapActive': '↔ Tap to select swap target',
+    'room.swapIdle': '↔ Tap cards to swap seats',
 
     // Result
     'result.title': 'Results',
