@@ -48,6 +48,9 @@ export default function RulePresets({ onSelect, defaultRules, submitLabel, disab
   const [customUma, setCustomUma] = useState<number[]>(
     defaultRules?.uma ?? [15, 5, -5, -15]
   );
+  const [customTiebreakRule, setCustomTiebreakRule] = useState<'seat_priority' | 'split'>(
+    defaultRules?.tiebreakRule ?? 'seat_priority'
+  );
 
   const presetKeys = (Object.keys(PRESETS) as Array<keyof typeof PRESETS>).filter(k => PRESETS[k].mode === mode);
 
@@ -79,7 +82,7 @@ export default function RulePresets({ onSelect, defaultRules, submitLabel, disab
 
   function handleConfirm() {
     if (isCustom) {
-      onSelect(createCustomRule(customStart, customReturn, customUma.slice(0, mode === '3-player' ? 3 : 4), mode));
+      onSelect(createCustomRule(customStart, customReturn, customUma.slice(0, mode === '3-player' ? 3 : 4), mode, customTiebreakRule));
     } else if (activePreset) {
       onSelect(PRESETS[activePreset]);
     }
@@ -213,6 +216,36 @@ export default function RulePresets({ onSelect, defaultRules, submitLabel, disab
                 ))}
               </div>
             </div>
+            {/* Tiebreak rule toggle */}
+            <div>
+              <label className="block text-xs text-zinc-500 mb-1">
+                {t('create.tiebreakRule' as Parameters<typeof t>[0])}
+              </label>
+              <div className="flex bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setCustomTiebreakRule('seat_priority')}
+                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
+                    customTiebreakRule === 'seat_priority'
+                      ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-white'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:bg-white/50 dark:hover:bg-zinc-700/50'
+                  }`}
+                >
+                  {t('create.tiebreakSeatPriority' as Parameters<typeof t>[0])}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomTiebreakRule('split')}
+                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
+                    customTiebreakRule === 'split'
+                      ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-white'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:bg-white/50 dark:hover:bg-zinc-700/50'
+                  }`}
+                >
+                  {t('create.tiebreakSplit' as Parameters<typeof t>[0])}
+                </button>
+              </div>
+            </div>
           </>
         ) : selectedRule ? (
           <>
@@ -248,6 +281,14 @@ export default function RulePresets({ onSelect, defaultRules, submitLabel, disab
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+            <div>
+              <span className="text-xs text-zinc-500">{t('create.tiebreakRule' as Parameters<typeof t>[0])}</span>
+              <div className="text-sm font-medium text-zinc-900 dark:text-white mt-0.5">
+                {selectedRule.tiebreakRule === 'split'
+                  ? t('create.tiebreakSplit' as Parameters<typeof t>[0])
+                  : t('create.tiebreakSeatPriority' as Parameters<typeof t>[0])}
               </div>
             </div>
           </>

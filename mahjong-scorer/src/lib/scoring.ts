@@ -91,11 +91,34 @@ export function calculatePT(
   const ranked = determineRankings(players);
   const multiplier = players.length === 3 ? 3 : 4;
   const oka = (rules.returnPoints - rules.startPoints) * multiplier / 1000; // oka in PT units
+  const isSplit = rules.tiebreakRule === 'split';
+
+  // Build effective uma array (possibly averaged for tied groups)
+  let effectiveUma = [...rules.uma];
+  if (isSplit) {
+    // Find groups of players with the same rawScore and average their uma
+    let i = 0;
+    while (i < ranked.length) {
+      let j = i + 1;
+      while (j < ranked.length && ranked[j].rawScore === ranked[i].rawScore) {
+        j++;
+      }
+      if (j - i > 1) {
+        // Tied group from index i to j-1
+        const groupUma = effectiveUma.slice(i, j);
+        const avg = groupUma.reduce((a, b) => a + b, 0) / groupUma.length;
+        for (let k = i; k < j; k++) {
+          effectiveUma[k] = avg;
+        }
+      }
+      i = j;
+    }
+  }
 
   const results: PlayerResult[] = ranked.map((player, index) => {
     const rank = index + 1;
     const basePT = (player.rawScore - rules.returnPoints) / 1000;
-    const uma = rules.uma[index] || 0;
+    const uma = effectiveUma[index] || 0;
 
     let pt: number;
     if (rank === 1) {

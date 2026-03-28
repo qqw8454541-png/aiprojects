@@ -38,6 +38,9 @@ export const translations = {
     'create.modeSanma': '三人打ち',
     'create.sanmaMajsoul': '雀魂三麻',
     'create.sanmaStandard': '標準三麻',
+    'create.tiebreakRule': '同点時の処理',
+    'create.tiebreakSplit': 'ウマ均等分割',
+    'create.tiebreakSeatPriority': '上家取り',
 
     // Room
     'room.title': '対局ルーム',
@@ -133,6 +136,9 @@ export const translations = {
     'create.modeSanma': '三人麻将',
     'create.sanmaMajsoul': '雀魂三麻',
     'create.sanmaStandard': '标准三麻',
+    'create.tiebreakRule': '同分时处理',
+    'create.tiebreakSplit': '马点平分',
+    'create.tiebreakSeatPriority': '座次靠前全得',
 
     // Room
     'room.title': '对局房间',
@@ -228,6 +234,9 @@ export const translations = {
     'create.modeSanma': '3-Player',
     'create.sanmaMajsoul': 'Majsoul Sanma',
     'create.sanmaStandard': 'Standard Sanma',
+    'create.tiebreakRule': 'Tiebreak Rule',
+    'create.tiebreakSplit': 'Split Uma',
+    'create.tiebreakSeatPriority': 'Seat Priority',
 
     // Room
     'room.title': 'Game Room',
