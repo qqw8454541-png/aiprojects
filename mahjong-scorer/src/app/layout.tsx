@@ -3,6 +3,7 @@ import { Noto_Sans_JP } from 'next/font/google';
 import I18nProvider from '@/components/I18nProvider';
 import ThemeProviders from '@/components/ThemeProviders';
 import TopBar from '@/components/TopBar';
+import { SyncProvider } from '@/components/SyncProvider';
 import './globals.css';
 
 const notoSansJP = Noto_Sans_JP({
@@ -35,8 +36,10 @@ export default function RootLayout({
       >
         <ThemeProviders>
           <I18nProvider>
-            <TopBar />
-            {children}
+            <SyncProvider>
+              <TopBar />
+              {children}
+            </SyncProvider>
           </I18nProvider>
         </ThemeProviders>
       </body>

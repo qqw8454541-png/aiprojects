@@ -103,7 +103,7 @@ export default function RulePresets({ onSelect, defaultRules, submitLabel, disab
               : 'text-zinc-500 dark:text-zinc-400 hover:bg-white/50 dark:hover:bg-zinc-700/50'
           } ${disabledMode && mode !== '4-player' ? 'opacity-30 cursor-not-allowed' : ''}`}
         >
-          {t('create.modeYonma' as Parameters<typeof t>[0]) || '四人麻将'}
+          {t('create.modeYonma' as Parameters<typeof t>[0])}
         </button>
         <button
           disabled={disabledMode}
@@ -114,7 +114,7 @@ export default function RulePresets({ onSelect, defaultRules, submitLabel, disab
               : 'text-zinc-500 dark:text-zinc-400 hover:bg-white/50 dark:hover:bg-zinc-700/50'
           } ${disabledMode && mode !== '3-player' ? 'opacity-30 cursor-not-allowed' : ''}`}
         >
-          {t('create.modeSanma' as Parameters<typeof t>[0]) || '三人麻将'}
+          {t('create.modeSanma' as Parameters<typeof t>[0])}
         </button>
       </div>
 

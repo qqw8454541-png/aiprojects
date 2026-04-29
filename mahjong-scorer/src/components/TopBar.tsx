@@ -34,15 +34,22 @@ export default function TopBar() {
 
   let leftContent = null;
   
-  if (currentPage !== 'home') {
+  if (currentPage !== 'landing') {
     // Basic back button
-    let backAction = () => setPage('home');
-    if (currentPage === 'room') {
+    let backAction = () => setPage('landing');
+    if (currentPage === 'venue-coming-soon') {
+      backAction = () => setPage('landing');
+    } else if (currentPage === 'personal-menu') {
+      backAction = () => setPage('landing');
+    } else if (currentPage === 'manage-rooms') {
+      backAction = () => setPage('personal-menu');
+    } else if (currentPage === 'room-history') {
+      backAction = () => setPage('manage-rooms');
+    } else if (currentPage === 'create') {
+      backAction = () => setPage('personal-menu');
+    } else if (currentPage === 'room') {
       backAction = () => {
-        if (window.confirm(t('room.confirmExit' as Parameters<typeof t>[0]))) {
-          resetRoom();
-          setPage('home');
-        }
+        setPage('personal-menu');
       };
     } else if (currentPage === 'score' || currentPage === 'result' || currentPage === 'report') {
       backAction = () => setPage('room');
@@ -104,6 +111,12 @@ export default function TopBar() {
       ExtraInfo = <span className="text-xs font-medium px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 flex-shrink-0">#{displayRoundNum}</span>;
     } else if (currentPage === 'report') {
       Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-[120px] sm:max-w-[200px]">{roomName ? roomName : t('result.reportTitle' as Parameters<typeof t>[0])}</h1>;
+    } else if (currentPage === 'personal-menu') {
+      Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('landing.personalMode')}</h1>;
+    } else if (currentPage === 'manage-rooms') {
+      Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('manage.title')}</h1>;
+    } else if (currentPage === 'room-history') {
+      Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('history.title')}</h1>;
     }
 
     leftContent = (

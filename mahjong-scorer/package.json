@@ -6,9 +6,16 @@
     "dev": "next dev -H 0.0.0.0",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "mobile:sync": "npm run build && npx cap sync"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
+    "@capacitor/ios": "^8.3.0",
+    "@dicebear/collection": "^9.4.2",
+    "@dicebear/core": "^9.4.2",
+    "@supabase/supabase-js": "^2.101.1",
     "framer-motion": "^12.38.0",
     "html-to-image": "^1.11.13",
     "lucide-react": "^0.577.0",
@@ -20,12 +27,14 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.3.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.7",
+    "supabase": "^2.95.6",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

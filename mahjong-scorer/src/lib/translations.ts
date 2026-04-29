@@ -10,6 +10,23 @@ export const translations = {
     'common.reset': 'リセット',
     'common.close': '閉じる',
 
+    // Landing
+    'landing.venueMode': '麻雀スペース',
+    'landing.venueModeDesc': '麻雀カフェ・教室・雀荘向け',
+    'landing.personalMode': 'プライベート対局',
+    'landing.personalModeDesc': '友人・仲間内の対局記録',
+    'landing.comingSoon': '準備中',
+    'landing.comingSoonDesc': 'このモードは現在開発中です。もうしばらくお待ちください。',
+    'landing.backToTop': 'トップに戻る',
+
+    // Personal menu
+    'personal.newGame': '新規ゲーム開始',
+    'personal.newGameDesc': 'ルールを選んで今すぐ対局',
+    'personal.savedRooms': '保存済みルーム',
+    'personal.savedRoomsDesc': '登録メンバーで素早く開始',
+    'personal.manageRooms': 'ルームを管理',
+    'personal.manageRoomsDesc': 'メンバー編集・戦績確認',
+
     // Home
     'home.createRoom': '対局を作成',
     'home.joinRoom': 'ルームに参加',
@@ -66,6 +83,12 @@ export const translations = {
     'room.statusCompleted': '対局完了',
     'room.startMatch': '対局開始',
     'room.continueMatch': '対局再開',
+    'room.saveRoom': 'このルームを保存',
+    'room.saveRoomHint': '保存するとメンバーとルールが登録されます',
+    'room.saveRoomNameRequired': 'ルーム名を入力してください',
+    'room.saveRoomSuccess': 'ルームを保存しました',
+    'room.savedRuleNote': '以前保存されたルールを使用します。変更が必要な場合は編集後に再保存してください。',
+    'room.duplicateRoom': 'メンバーが全く同じルームが既に存在します！',
 
     // Score Input
     'score.title': '点数入力',
@@ -96,6 +119,53 @@ export const translations = {
     'result.generateReport': '戦績表を生成',
     'result.downloadImage': '画像を共有 / 保存',
     'result.reportTitle': '最終戦績報告',
+    'room.confirmEndTodayMatch': '本日の対局を終了し、キャッシュデータを消去しますか？',
+    'room.endTodayMatch': '本日の対局を終了',
+    'room.managePlayer': 'プレイヤー管理 (Edit Player)',
+    'room.randomAvatar': 'ランダムアバター',
+    'room.name': 'ニックネーム Name',
+    'room.save': '保存 Save',
+    'room.bye': '抜け番',
+    'room.calculating': 'AI評価を生成中',
+    'room.regenerate': 'AI評価を再生成',
+    'eval.noApiKey': 'APIキーが設定されていないため、評価を生成できません。',
+    'eval.apiError': 'システムエラーが発生しました。',
+    'eval.quotaExceeded': 'AIの無料利用上限に達しました。しばらく経ってから再度お試しください。',
+    'eval.formatError': 'AIから返されたデータ形式が正しくないため、解析に失敗しました。',
+    'room.historyMembers': '過去の対戦メンバー',
+    'room.bench': '待機エリア',
+
+    // Saved rooms page
+    'savedRooms.title': '保存済みルーム',
+    'savedRooms.empty': '保存されたルームがありません',
+    'savedRooms.emptyHint': '対局後に「ルームを保存」で登録できます',
+    'savedRooms.ruleNote': '保存済みルールを使用',
+    'savedRooms.startGame': '対局開始',
+    'savedRooms.members': '名',
+
+    // Manage rooms page
+    'manage.title': 'ルームを管理',
+    'manage.tabRooms': 'ルーム',
+    'manage.tabMembers': 'メンバー',
+    'manage.newMember': '新規メンバー追加',
+    'manage.deleteMemberConfirm': 'このメンバーを削除しますか？',
+    'manage.empty': '保存されたルームがありません',
+    'manage.editName': 'ルーム名を編集',
+    'manage.members': 'メンバー',
+    'manage.addMember': 'メンバーを追加',
+    'manage.removeMember': '削除',
+    'manage.deleteRoom': 'ルームを削除',
+    'manage.deleteRoomConfirm': 'このルームを削除しますか？戦績は保持されます。',
+    'manage.viewHistory': '戦績を見る',
+    'manage.saveChanges': '変更を保存',
+    'manage.duplicateRoomName': '同じ名前のルームが既に存在します！',
+
+    // History page
+    'history.title': '過去の対局',
+    'history.noSessions': '記録された対局がありません',
+    'history.session': '対局',
+    'history.hanchan': '半荘',
+    'history.totalPt': '累計PT',
   },
   zh: {
     // Common
@@ -107,6 +177,23 @@ export const translations = {
     'common.cancel': '取消',
     'common.reset': '重置',
     'common.close': '关闭',
+
+    // Landing
+    'landing.venueMode': '麻将馆模式',
+    'landing.venueModeDesc': '麻将馆 · 咖啡馆 · 教室专用',
+    'landing.personalMode': '私人对局',
+    'landing.personalModeDesc': '朋友之间的对局记录',
+    'landing.comingSoon': '开发中',
+    'landing.comingSoonDesc': '该模式目前正在开发中，敬请期待。',
+    'landing.backToTop': '返回首页',
+
+    // Personal menu
+    'personal.newGame': '开始新对局',
+    'personal.newGameDesc': '选择规则立即开始',
+    'personal.savedRooms': '已存档房间',
+    'personal.savedRoomsDesc': '快速载入常用成员',
+    'personal.manageRooms': '管理房间',
+    'personal.manageRoomsDesc': '编辑成员 · 查看战绩',
 
     // Home
     'home.createRoom': '创建对局',
@@ -164,6 +251,12 @@ export const translations = {
     'room.statusCompleted': '对局完成',
     'room.startMatch': '开始对局',
     'room.continueMatch': '继续对局',
+    'room.saveRoom': '保存当前房间',
+    'room.saveRoomHint': '保存后可快速召集同一批成员',
+    'room.saveRoomNameRequired': '请先输入房间名',
+    'room.saveRoomSuccess': '房间已保存',
+    'room.savedRuleNote': '将使用已保存的规则。如需修改，请在房间页编辑后重新保存。',
+    'room.duplicateRoom': '已有相同成员组成的固定房间，无需重复保存！',
 
     // Score Input
     'score.title': '录入点数',
@@ -194,6 +287,53 @@ export const translations = {
     'result.generateReport': '生成最终战报',
     'result.downloadImage': '分享 / 保存图片',
     'result.reportTitle': '最终战绩报告',
+    'room.confirmEndTodayMatch': '确定要结束今日的对战并清除缓存数据吗？',
+    'room.endTodayMatch': '今日对战结束',
+    'room.managePlayer': '管理玩家 (Edit Player)',
+    'room.randomAvatar': '🔄 随机头像',
+    'room.name': '昵称 Name',
+    'room.save': '保存提交 Save',
+    'room.bye': '轮空',
+    'room.calculating': 'AI 构思辣评中',
+    'room.regenerate': '重新生成 AI 点评',
+    'eval.noApiKey': '未配置大模型API Key，无法生成动态评价。',
+    'eval.apiError': '发牌姬短路了，请稍后再试。',
+    'eval.quotaExceeded': '大模型 API 的调用额度已用完，请稍等冷却后再试！',
+    'eval.formatError': '大模型返回的数据格式不正确，解析失败。',
+    'room.historyMembers': '以往对战成员',
+    'room.bench': '待命区域',
+
+    // Saved rooms page
+    'savedRooms.title': '已存档房间',
+    'savedRooms.empty': '暂无已保存的房间',
+    'savedRooms.emptyHint': '对局结束后点击「保存房间」来登记',
+    'savedRooms.ruleNote': '使用已保存规则',
+    'savedRooms.startGame': '开始对局',
+    'savedRooms.members': '人',
+
+    // Manage rooms page
+    'manage.title': '管理房间',
+    'manage.tabRooms': '房间',
+    'manage.tabMembers': '成员',
+    'manage.newMember': '新增成员',
+    'manage.deleteMemberConfirm': '确定要删除该成员吗？',
+    'manage.empty': '暂无已保存的房间',
+    'manage.editName': '编辑房间名',
+    'manage.members': '成员',
+    'manage.addMember': '添加成员',
+    'manage.removeMember': '移除',
+    'manage.deleteRoom': '删除房间',
+    'manage.deleteRoomConfirm': '确定要删除这个房间吗？战绩记录将会保留。',
+    'manage.viewHistory': '查看战绩',
+    'manage.saveChanges': '保存更改',
+    'manage.duplicateRoomName': '已有同名房间，请修改名称！',
+
+    // History page
+    'history.title': '以往战绩',
+    'history.noSessions': '暂无对局记录',
+    'history.session': '对局',
+    'history.hanchan': '半庄',
+    'history.totalPt': '累计PT',
   },
   en: {
     // Common
@@ -205,6 +345,23 @@ export const translations = {
     'common.cancel': 'Cancel',
     'common.reset': 'Reset',
     'common.close': 'Close',
+
+    // Landing
+    'landing.venueMode': 'Venue Mode',
+    'landing.venueModeDesc': 'For clubs, cafés & mahjong spaces',
+    'landing.personalMode': 'Personal Mode',
+    'landing.personalModeDesc': 'Track games with friends',
+    'landing.comingSoon': 'Coming Soon',
+    'landing.comingSoonDesc': 'This mode is currently under development. Please check back later.',
+    'landing.backToTop': 'Back to Top',
+
+    // Personal menu
+    'personal.newGame': 'Start New Game',
+    'personal.newGameDesc': 'Choose rules and play now',
+    'personal.savedRooms': 'Saved Rooms',
+    'personal.savedRoomsDesc': 'Quickly start with saved members',
+    'personal.manageRooms': 'Manage Rooms',
+    'personal.manageRoomsDesc': 'Edit members & view history',
 
     // Home
     'home.createRoom': 'Create Game',
@@ -262,6 +419,12 @@ export const translations = {
     'room.statusCompleted': 'Completed',
     'room.startMatch': 'Start Match',
     'room.continueMatch': 'Continue Match',
+    'room.saveRoom': 'Save This Room',
+    'room.saveRoomHint': 'Save members & rules for future games',
+    'room.saveRoomNameRequired': 'Please enter a room name first',
+    'room.saveRoomSuccess': 'Room saved!',
+    'room.savedRuleNote': 'Saved rules will be used. Edit & re-save if you need to change them.',
+    'room.duplicateRoom': 'A saved room with the exact same members already exists!',
 
     // Score Input
     'score.title': 'Score Input',
@@ -292,6 +455,53 @@ export const translations = {
     'result.generateReport': 'Generate Report',
     'result.downloadImage': 'Share / Save Image',
     'result.reportTitle': 'Match Report',
+    'room.confirmEndTodayMatch': 'Are you sure you want to end today\'s match and clear the cached data?',
+    'room.endTodayMatch': 'End Today\'s Match',
+    'room.managePlayer': 'Manage Player (Edit Player)',
+    'room.randomAvatar': 'Random Avatar',
+    'room.name': 'Name',
+    'room.save': 'Save',
+    'room.bye': 'Bye',
+    'room.calculating': 'AI generating',
+    'room.regenerate': 'Regenerate AI Comments',
+    'eval.noApiKey': 'API Key not configured, cannot generate evaluation.',
+    'eval.apiError': 'The Mahjong Gods are silent today (Error).',
+    'eval.quotaExceeded': 'AI API free tier quota exceeded. Please try again later!',
+    'eval.formatError': 'The AI returned an invalid data format and parsing failed.',
+    'room.historyMembers': 'Past Members',
+    'room.bench': 'Bench',
+
+    // Saved rooms page
+    'savedRooms.title': 'Saved Rooms',
+    'savedRooms.empty': 'No saved rooms yet',
+    'savedRooms.emptyHint': 'Save a room after a game to register it here',
+    'savedRooms.ruleNote': 'Uses saved rules',
+    'savedRooms.startGame': 'Start Game',
+    'savedRooms.members': 'members',
+
+    // Manage rooms page
+    'manage.title': 'Manage Rooms',
+    'manage.tabRooms': 'Rooms',
+    'manage.tabMembers': 'Members',
+    'manage.newMember': 'New Member',
+    'manage.deleteMemberConfirm': 'Delete this member?',
+    'manage.empty': 'No saved rooms',
+    'manage.editName': 'Edit Name',
+    'manage.members': 'Members',
+    'manage.addMember': 'Add Member',
+    'manage.removeMember': 'Remove',
+    'manage.deleteRoom': 'Delete Room',
+    'manage.deleteRoomConfirm': 'Delete this room? Match history will be kept.',
+    'manage.viewHistory': 'View History',
+    'manage.saveChanges': 'Save Changes',
+    'manage.duplicateRoomName': 'A room with this name already exists!',
+
+    // History page
+    'history.title': 'Match History',
+    'history.noSessions': 'No sessions recorded',
+    'history.session': 'Session',
+    'history.hanchan': 'Hanchan',
+    'history.totalPt': 'Total PT',
   },
 } as const;
 
