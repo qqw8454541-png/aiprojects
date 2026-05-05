@@ -134,6 +134,8 @@ export const translations = {
     'eval.formatError': 'AIから返されたデータ形式が正しくないため、解析に失敗しました。',
     'room.historyMembers': '過去の対戦メンバー',
     'room.bench': '待機エリア',
+    'room.defaultRoomNameSuffix': ' の対局',
+    'room.newTeamPrompt': '新しいプレイヤー構成が検出されました。「管理ルーム」に保存して、次回からワンタップで開始できるようにしますか？\n(保存する場合はルーム名を入力してください。キャンセルした場合は保存されません)',
 
     // Saved rooms page
     'savedRooms.title': '保存済みルーム',
@@ -302,6 +304,8 @@ export const translations = {
     'eval.formatError': '大模型返回的数据格式不正确，解析失败。',
     'room.historyMembers': '以往对战成员',
     'room.bench': '待命区域',
+    'room.defaultRoomNameSuffix': ' 的对局',
+    'room.newTeamPrompt': '检测到这是一个新的玩家阵容。是否将其保存到「管理房间」中，方便下次一键开局？\n(如需保存请输入房间名，取消则不保存)',
 
     // Saved rooms page
     'savedRooms.title': '已存档房间',
@@ -470,6 +474,8 @@ export const translations = {
     'eval.formatError': 'The AI returned an invalid data format and parsing failed.',
     'room.historyMembers': 'Past Members',
     'room.bench': 'Bench',
+    'room.defaultRoomNameSuffix': '\'s Game',
+    'room.newTeamPrompt': 'New player lineup detected. Do you want to save it to "Manage Rooms" for quick start next time?\n(Enter room name to save, cancel to not save)',
 
     // Saved rooms page
     'savedRooms.title': 'Saved Rooms',

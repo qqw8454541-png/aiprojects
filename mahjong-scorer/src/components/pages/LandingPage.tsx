@@ -11,11 +11,9 @@ export default function LandingPage() {
   const { deviceId } = useGameStore();
 
   const handleHealthCheck = async () => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (!url) {
-      alert('Error: NEXT_PUBLIC_SUPABASE_URL is not set.');
-      return;
-    }
+    const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const useProxy = process.env.NEXT_PUBLIC_USE_SUPABASE_PROXY === 'true';
+    const url = useProxy ? `${window.location.origin}/supabase-proxy` : envUrl;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     try {
@@ -27,14 +25,20 @@ export default function LandingPage() {
         signal: controller.signal
       });
       clearTimeout(timeoutId);
-      alert(`✅ Network OK! Database is reachable.\nURL: ${url}\nStatus: ${res.status}`);
+
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType?.includes('application/json')) {
+        alert(`✅ Network OK! Database is reachable.\nProxy: ${url}\nStatus: ${res.status}`);
+      } else {
+        throw new Error(`Invalid response (type: ${contentType}). Proxy may not be configured correctly.`);
+      }
     } catch (e: any) {
       clearTimeout(timeoutId);
       let msg = e.message;
       if (e.name === 'AbortError') {
-        msg = "Request timed out after 3 seconds. The server did not respond. This usually means the Windows Firewall is blocking incoming connections.";
+        msg = "Request timed out after 3 seconds. The server did not respond.";
       }
-      alert(`❌ Network Error! Could not connect to database.\nURL: ${url}\nError: ${msg}\n\nPlease check your Wifi connection or Windows Firewall.`);
+      alert(`❌ Network Error! Could not connect to database.\nProxy: ${url}\nError: ${msg}`);
     }
   };
 

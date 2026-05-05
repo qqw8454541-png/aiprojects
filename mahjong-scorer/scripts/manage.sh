@@ -47,7 +47,7 @@ function start_services() {
     # supabase status might output non-json warnings before the JSON object
     STATUS_JSON=$(npx supabase status -o json 2>/dev/null | grep -v "^Stopped services" | grep -v "^A new version" | sed -n '/^{/,$p')
     if [ ! -z "$STATUS_JSON" ]; then
-        ANON_KEY=$(echo "$STATUS_JSON" | node -e "const fs = require('fs'); try { const data = JSON.parse(fs.readFileSync(0, 'utf-8')); console.log(data.ANON_KEY || ''); } catch(e) { console.error('JSON parse error:', e); process.exit(1); }")
+        ANON_KEY=$(echo "$STATUS_JSON" | node -e "const fs = require('fs'); try { const data = JSON.parse(fs.readFileSync(0, 'utf-8')); console.log(data.PUBLISHABLE_KEY || data.ANON_KEY || ''); } catch(e) { console.error('JSON parse error:', e); process.exit(1); }")
         if [ ! -z "$ANON_KEY" ] && [ "$ANON_KEY" != "null" ]; then
             # Update NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local
             sed -i "s|^NEXT_PUBLIC_SUPABASE_ANON_KEY=.*|NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY|" .env.local

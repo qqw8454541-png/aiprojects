@@ -370,9 +370,9 @@ export default function RoomPage() {
                   }
                   
                   if (!isDuplicate) {
-                    const defaultName = currentNames.join('、') + ' 的对局';
+                    const defaultName = currentNames.join('、') + t('room.defaultRoomNameSuffix' as Parameters<typeof t>[0]);
                     const newName = prompt(
-                      '检测到这是一个新的玩家阵容。是否将其保存到「管理房间」中，方便下次一键开局？\n(如需保存请输入房间名，取消则不保存)',
+                      t('room.newTeamPrompt' as Parameters<typeof t>[0]),
                       defaultName
                     );
                     if (newName && newName.trim()) {

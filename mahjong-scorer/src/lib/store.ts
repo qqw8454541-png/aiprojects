@@ -444,7 +444,9 @@ export const useGameStore = create<GameState>()(
         set({ players: newPlayers });
 
         // Insert room
-        await dbRooms.insert(deviceId, roomName, state.rules, memberIds);
+        const newRoom = await dbRooms.insert(deviceId, roomName, state.rules, memberIds);
+        set({ sessionSavedRoomId: newRoom.id });
+        await get().archiveSession();
       },
 
       loadSavedRoom: async (roomId: string) => {
