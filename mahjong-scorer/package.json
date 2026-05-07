@@ -7,12 +7,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "mobile:sync": "npm run build && npx cap sync"
+    "mobile:sync": "MOBILE_BUILD=true npm run build && node scripts/strip-lab-colors.mjs && npx cap sync",
+    "mobile:build:android": "MOBILE_BUILD=true npm run build && node scripts/strip-lab-colors.mjs && npx cap sync android && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.0",
     "@capacitor/core": "^8.3.0",
+    "@capacitor/haptics": "^8.0.2",
     "@capacitor/ios": "^8.3.0",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
     "@dicebear/collection": "^9.4.2",
     "@dicebear/core": "^9.4.2",
     "@supabase/supabase-js": "^2.101.1",

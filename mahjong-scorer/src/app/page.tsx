@@ -2,6 +2,8 @@
 import { useEffect } from 'react';
 import { useGameStore } from '@/lib/store';
 import dynamic from 'next/dynamic';
+import { SplashScreen } from '@capacitor/splash-screen';
+import { Capacitor } from '@capacitor/core';
 
 // === Static Imports (LCP and Core UI) ===
 import LandingPage from '@/components/pages/LandingPage';
@@ -35,6 +37,21 @@ export default function Home() {
       }
       return {};
     });
+
+    if (typeof window !== 'undefined') {
+      setTimeout(() => {
+        try {
+          SplashScreen.hide().catch(() => {});
+          // Sync native StatusBar color with app theme
+          if (Capacitor.isNativePlatform()) {
+            import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
+              StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+              StatusBar.setBackgroundColor({ color: '#09090b' }).catch(() => {});
+            }).catch(() => {});
+          }
+        } catch (e) {}
+      }, 300);
+    }
   }, []);
 
   switch (currentPage) {

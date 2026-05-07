@@ -95,6 +95,9 @@ export function calculatePT(
 
   // Build effective uma array (possibly averaged for tied groups)
   let effectiveUma = [...rules.uma];
+  // Track how many players share 1st place (for OKA splitting)
+  let firstPlaceGroupSize = 1;
+
   if (isSplit) {
     // Find groups of players with the same rawScore and average their uma
     let i = 0;
@@ -110,6 +113,10 @@ export function calculatePT(
         for (let k = i; k < j; k++) {
           effectiveUma[k] = avg;
         }
+        // If this tied group includes 1st place (index 0), record its size
+        if (i === 0) {
+          firstPlaceGroupSize = j;
+        }
       }
       i = j;
     }
@@ -121,7 +128,10 @@ export function calculatePT(
     const uma = effectiveUma[index] || 0;
 
     let pt: number;
-    if (rank === 1) {
+    if (isSplit && firstPlaceGroupSize > 1 && index < firstPlaceGroupSize) {
+      // Split OKA evenly among tied 1st-place players
+      pt = basePT + uma + oka / firstPlaceGroupSize;
+    } else if (rank === 1) {
       pt = basePT + uma + oka;
     } else {
       pt = basePT + uma;

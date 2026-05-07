@@ -9,38 +9,8 @@ export default function LandingPage() {
   const { t } = useI18n();
   const setPage = useGameStore((s) => s.setPage);
   const { deviceId } = useGameStore();
+  const [showAgeGate, setShowAgeGate] = useState(false);
 
-  const handleHealthCheck = async () => {
-    const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const useProxy = process.env.NEXT_PUBLIC_USE_SUPABASE_PROXY === 'true';
-    const url = useProxy ? `${window.location.origin}/supabase-proxy` : envUrl;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
-    try {
-      const res = await fetch(`${url}/rest/v1/`, {
-        method: 'GET',
-        headers: {
-          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-        },
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      const contentType = res.headers.get('content-type');
-      if (res.ok && contentType?.includes('application/json')) {
-        alert(`✅ Network OK! Database is reachable.\nProxy: ${url}\nStatus: ${res.status}`);
-      } else {
-        throw new Error(`Invalid response (type: ${contentType}). Proxy may not be configured correctly.`);
-      }
-    } catch (e: any) {
-      clearTimeout(timeoutId);
-      let msg = e.message;
-      if (e.name === 'AbortError') {
-        msg = "Request timed out after 3 seconds. The server did not respond.";
-      }
-      alert(`❌ Network Error! Could not connect to database.\nProxy: ${url}\nError: ${msg}`);
-    }
-  };
 
   useEffect(() => {
     if (!deviceId) {
@@ -52,10 +22,47 @@ export default function LandingPage() {
       }
       useGameStore.setState({ deviceId: id });
     }
+
+    if (typeof window !== 'undefined') {
+      const verified = localStorage.getItem('age_verified');
+      if (!verified) {
+        setShowAgeGate(true);
+      }
+    }
   }, [deviceId]);
+
+  const handleAgeConfirm = () => {
+    localStorage.setItem('age_verified', 'true');
+    setShowAgeGate(false);
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-dvh px-6 page-enter">
+      {showAgeGate && (
+        <div className="fixed inset-0 z-[100] bg-zinc-950 flex items-center justify-center p-6 text-center">
+          <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl max-w-sm w-full shadow-2xl">
+            <h2 className="text-2xl font-black text-white mb-4">🔞 18+ Age Verification</h2>
+            <p className="text-sm text-zinc-400 mb-6 leading-relaxed">
+              This application is a tool for recording scores and is strictly for entertainment and mathematical tracking. By continuing, you confirm that you are at least 18 years of age and will not use this application for any real-money gambling or illegal activities.
+            </p>
+            <div className="space-y-3">
+              <button 
+                onClick={handleAgeConfirm}
+                className="w-full py-4 rounded-xl bg-amber-600 text-white font-bold hover:bg-amber-500 active:scale-95 transition-all"
+              >
+                I Confirm I am 18+
+              </button>
+              <button 
+                onClick={() => alert("You must be 18+ to use this app.")}
+                className="w-full py-4 rounded-xl bg-zinc-800 text-zinc-400 font-medium hover:bg-zinc-700 transition-all"
+              >
+                Exit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="text-center mb-12">
         <div className="relative w-32 h-32 mx-auto mb-6">
           <svg viewBox="0 0 120 120" className="w-full h-full animate-[float_4s_ease-in-out_infinite] filter drop-shadow-xl relative z-10" xmlns="http://www.w3.org/2000/svg">
@@ -102,12 +109,7 @@ export default function LandingPage() {
         </button>
 
 
-        <button 
-          onClick={handleHealthCheck}
-          className="mx-auto block text-[10px] text-zinc-300 dark:text-zinc-700 hover:text-amber-500 transition-colors"
-        >
-          🔍 DB Healthcheck
-        </button>
+
       </div>
     </div>
   );

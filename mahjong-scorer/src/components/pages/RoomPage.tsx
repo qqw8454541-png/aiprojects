@@ -24,6 +24,11 @@ export default function RoomPage() {
   const [tempName, setTempName] = useState('');
   const [savedMembers, setSavedMembers] = useState<import('@/lib/db').DbSavedMember[]>([]);
 
+  // Modal states for end-match flow (replaces window.confirm/prompt which don't work on Android WebView)
+  const [showEndConfirm, setShowEndConfirm] = useState(false);
+  const [showNamingModal, setShowNamingModal] = useState(false);
+  const [pendingRoomName, setPendingRoomName] = useState('');
+
   useEffect(() => {
     if (!deviceId) return;
     import('@/lib/db').then(({ dbMembers }) => {
@@ -345,56 +350,169 @@ export default function RoomPage() {
       {rounds.length > 0 && (
         <div className="mt-4 pb-8">
           <button
-            onClick={async () => {
-              if (confirm(t('room.confirmEndTodayMatch' as Parameters<typeof t>[0]))) {
-                const limit = rules?.mode === '3-player' ? 3 : 4;
-                const seatedPlayers = seats
-                  .slice(0, limit)
-                  .map((s) => players.find((p) => p.id === s.playerId))
-                  .filter(Boolean);
-                
-                if (seatedPlayers.length === limit) {
-                  const { dbRooms } = await import('@/lib/db');
-                  const existingRooms = await dbRooms.list(deviceId);
-                  const currentNames = [...players.map(p => p!.name)].sort();
-                  
-                  let isDuplicate = false;
-                  for (const room of existingRooms) {
-                    if (!room.members) continue;
-                    const activeMembers = room.members.filter(m => m.avatar_seed !== '__DELETED__');
-                    const roomNames = [...activeMembers.map(m => m.name)].sort();
-                    if (currentNames.length > 0 && currentNames.length === roomNames.length && currentNames.every((name, i) => name === roomNames[i])) {
-                      isDuplicate = true;
-                      break;
-                    }
-                  }
-                  
-                  if (!isDuplicate) {
-                    const defaultName = currentNames.join('、') + t('room.defaultRoomNameSuffix' as Parameters<typeof t>[0]);
-                    const newName = prompt(
-                      t('room.newTeamPrompt' as Parameters<typeof t>[0]),
-                      defaultName
-                    );
-                    if (newName && newName.trim()) {
-                      try {
-                        await saveCurrentRoom(newName.trim());
-                      } catch (e) {
-                        console.error('Failed to auto-save room:', e);
-                      }
-                    }
-                  }
-                }
-
-                resetRoom();
-                setPage('personal-menu');
-              }
-            }}
+            onClick={() => setShowEndConfirm(true)}
             className="w-full py-4 rounded-xl font-bold text-rose-500 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 active:scale-[0.98] transition-all shadow-sm"
           >
             {t('room.endTodayMatch' as Parameters<typeof t>[0])}
           </button>
         </div>
       )}
+
+      {/* End Match Confirmation Modal */}
+      <AnimatePresence>
+        {showEndConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowEndConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl w-full max-w-sm overflow-hidden shadow-xl"
+            >
+              <div className="p-6 text-center">
+                <div className="text-4xl mb-3">⚠️</div>
+                <p className="text-zinc-800 dark:text-zinc-200 font-medium text-base mb-6">
+                  {t('room.confirmEndTodayMatch' as Parameters<typeof t>[0])}
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowEndConfirm(false)}
+                    className="flex-1 py-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold transition hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                  >
+                    {t('room.cancel' as Parameters<typeof t>[0]) || '取消'}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setShowEndConfirm(false);
+                      const limit = rules?.mode === '3-player' ? 3 : 4;
+                      const seatedPlayers = seats
+                        .slice(0, limit)
+                        .map((s) => players.find((p) => p.id === s.playerId))
+                        .filter(Boolean);
+
+                      if (seatedPlayers.length === limit) {
+                        const { dbRooms } = await import('@/lib/db');
+                        const existingRooms = await dbRooms.list(deviceId);
+                        const currentNames = [...players.map(p => p!.name)].sort();
+
+                        let isDuplicate = false;
+                        for (const room of existingRooms) {
+                          if (!room.members) continue;
+                          const activeMembers = room.members.filter(m => m.avatar_seed !== '__DELETED__');
+                          const roomNames = [...activeMembers.map(m => m.name)].sort();
+                          if (currentNames.length > 0 && currentNames.length === roomNames.length && currentNames.every((name, i) => name === roomNames[i])) {
+                            isDuplicate = true;
+                            break;
+                          }
+                        }
+
+                        if (!isDuplicate) {
+                          const defaultName = currentNames.join('、') + t('room.defaultRoomNameSuffix' as Parameters<typeof t>[0]);
+                          setPendingRoomName(defaultName);
+                          setShowNamingModal(true);
+                          return; // Don't reset yet — wait for naming modal
+                        }
+                      }
+
+                      resetRoom();
+                      setPage('personal-menu');
+                    }}
+                    className="flex-1 py-3 rounded-xl bg-rose-500 text-white font-bold transition hover:bg-rose-400 active:scale-[0.97]"
+                  >
+                    {t('room.confirm' as Parameters<typeof t>[0]) || '确认'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Room Naming Modal (replaces window.prompt for Android compatibility) */}
+      <AnimatePresence>
+        {showNamingModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => {
+              // Skip naming and just end match
+              setShowNamingModal(false);
+              resetRoom();
+              setPage('personal-menu');
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl w-full max-w-sm overflow-hidden shadow-xl"
+            >
+              <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+                <h3 className="font-bold text-zinc-900 dark:text-zinc-100">
+                  {t('room.newTeamPrompt' as Parameters<typeof t>[0]) || '为新房间命名'}
+                </h3>
+              </div>
+              <div className="p-6 space-y-4">
+                <input
+                  autoFocus
+                  type="text"
+                  maxLength={30}
+                  value={pendingRoomName}
+                  onChange={(e) => setPendingRoomName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && pendingRoomName.trim()) {
+                      setShowNamingModal(false);
+                      saveCurrentRoom(pendingRoomName.trim())
+                        .catch((err) => console.error('Failed to save room:', err))
+                        .finally(() => {
+                          resetRoom();
+                          setPage('personal-menu');
+                        });
+                    }
+                  }}
+                  className="w-full rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowNamingModal(false);
+                      resetRoom();
+                      setPage('personal-menu');
+                    }}
+                    className="flex-1 py-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold transition hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                  >
+                    {t('room.skip' as Parameters<typeof t>[0]) || '跳过'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!pendingRoomName.trim()) return;
+                      setShowNamingModal(false);
+                      saveCurrentRoom(pendingRoomName.trim())
+                        .catch((err) => console.error('Failed to save room:', err))
+                        .finally(() => {
+                          resetRoom();
+                          setPage('personal-menu');
+                        });
+                    }}
+                    className="flex-1 py-3 rounded-xl bg-amber-500 text-white font-bold transition hover:bg-amber-400 active:scale-[0.97]"
+                  >
+                    {t('room.save' as Parameters<typeof t>[0])}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Edit Player Modal */}
       <AnimatePresence>

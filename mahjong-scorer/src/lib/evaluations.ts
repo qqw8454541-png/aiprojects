@@ -1,5 +1,5 @@
-"use server";
-
+// This function runs client-side (no "use server") to support both web and static APK builds.
+// Requires NEXT_PUBLIC_GEMINI_API_KEY in .env.local / Vercel environment.
 import { LLM_CONFIG } from './llm.config';
 
 export type Locale = 'zh' | 'ja' | 'en';

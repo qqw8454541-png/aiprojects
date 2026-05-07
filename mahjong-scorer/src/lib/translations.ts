@@ -135,7 +135,10 @@ export const translations = {
     'room.historyMembers': '過去の対戦メンバー',
     'room.bench': '待機エリア',
     'room.defaultRoomNameSuffix': ' の対局',
-    'room.newTeamPrompt': '新しいプレイヤー構成が検出されました。「管理ルーム」に保存して、次回からワンタップで開始できるようにしますか？\n(保存する場合はルーム名を入力してください。キャンセルした場合は保存されません)',
+    'room.newTeamPrompt': '新しいプレイヤー構成を検出しました。ルーム名を入力して保存すると、次回からワンタップで開始できます。',
+    'room.cancel': 'キャンセル',
+    'room.confirm': '確認',
+    'room.skip': 'スキップ',
 
     // Saved rooms page
     'savedRooms.title': '保存済みルーム',
@@ -305,7 +308,10 @@ export const translations = {
     'room.historyMembers': '以往对战成员',
     'room.bench': '待命区域',
     'room.defaultRoomNameSuffix': ' 的对局',
-    'room.newTeamPrompt': '检测到这是一个新的玩家阵容。是否将其保存到「管理房间」中，方便下次一键开局？\n(如需保存请输入房间名，取消则不保存)',
+    'room.newTeamPrompt': '检测到新的玩家阵容。输入房间名保存后，下次可一键开局。',
+    'room.cancel': '取消',
+    'room.confirm': '确认',
+    'room.skip': '跳过',
 
     // Saved rooms page
     'savedRooms.title': '已存档房间',
@@ -475,7 +481,10 @@ export const translations = {
     'room.historyMembers': 'Past Members',
     'room.bench': 'Bench',
     'room.defaultRoomNameSuffix': '\'s Game',
-    'room.newTeamPrompt': 'New player lineup detected. Do you want to save it to "Manage Rooms" for quick start next time?\n(Enter room name to save, cancel to not save)',
+    'room.newTeamPrompt': 'New lineup detected. Enter a room name to save it for quick start next time.',
+    'room.cancel': 'Cancel',
+    'room.confirm': 'Confirm',
+    'room.skip': 'Skip',
 
     // Saved rooms page
     'savedRooms.title': 'Saved Rooms',
