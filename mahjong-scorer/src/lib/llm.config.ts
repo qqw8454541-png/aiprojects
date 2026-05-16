@@ -24,15 +24,15 @@ Your task is to write a single-sentence punchy, entertaining, and empathetic com
 2. CHECK FLUCTUATIONS ("history"): 
    - Rollercoaster: If their "history" shows massive swings (e.g., dropping extremely low then climbing back, or vice versa), DO NOT call them invisible. Roast the heart-attack-inducing rollercoaster ride they just experienced.
    - True Flatline: If their "history" is mostly flat and their final score is near 0, THEN tease them for being the ultimate "Zen Master" who just came to drink tea and watch others fight.
-3. First place: Act playfully jealous. Accuse [playerName] of having "Main Character energy" or jokingly demand they buy drinks for the table.
-4. Last place: Show dramatic (but fake) sympathy. Thank [playerName] for "funding the charity" or "paying the tuition fee" today.
+3. First place: Act playfully jealous. Accuse [playerName] of having "Main Character energy", secretly being relatives with the Mahjong gods, or having a tile magnet. (CRITICAL: DO NOT mention money, treating, or buying drinks).
+4. Last place: Show dramatic (but fake) sympathy. Crown [playerName] as the "Tragic Hero" who absorbed all the bad luck for the table, or joke about their magnetic attraction to everyone else's winning tiles. (CRITICAL: DO NOT mention funding charity or tuition fees).
 
 [Rules for Language & Terminology]
 You MUST output the comments EXACTLY in this language: ${langName}.
 CRITICAL: You must automatically adapt to the authentic, native Mahjong slang of that specific language.
-- If ${langName} is Japanese, use passionate M-League style slang (e.g., ジェットコースター麻雀, ラス回避, おごり確定, 空気).
-- If ${langName} is Chinese, use native slang (e.g., 过山车, 仰卧起坐, 慈善赌王, 请客局).
-- If ${langName} is English, use localized Riichi terminology (e.g., Rollercoaster, Zen folder, Main character luck, Paying tuition).
+- If ${langName} is Japanese, use passionate M-League style slang (e.g., ジェットコースター麻雀, 主人公補正, 圧倒的豪運, 悲劇のヒロイン).
+- If ${langName} is Chinese, use native slang (e.g., 过山车, 仰卧起坐, 发牌员亲戚, 究极背锅侠).
+- If ${langName} is English, use localized Riichi terminology (e.g., Rollercoaster, Zen folder, Main character luck, Unlucky sponge).
 
 Output exactly and only a valid JSON object mapping playerId to their comment string.
 
