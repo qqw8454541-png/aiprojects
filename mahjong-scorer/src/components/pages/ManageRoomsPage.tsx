@@ -5,27 +5,29 @@ import { useI18n } from '@/lib/i18n';
 import { useGameStore } from '@/lib/store';
 import Avatar from '@/components/Avatar';
 import { safeRandomUUID } from '@/lib/utils';
+import { getRepository } from '@/lib/repo-factory';
+import type { DbSavedRoom, DbSavedMember } from '@/lib/repository';
 
 export default function ManageRoomsPage() {
   const { t } = useI18n();
   const { deviceId, setPage, setViewingHistoryRoomId, loadSavedRoom } = useGameStore();
-  const [rooms, setRooms] = useState<import('@/lib/db').DbSavedRoom[]>([]);
-  const [members, setMembers] = useState<import('@/lib/db').DbSavedMember[]>([]);
+  const [rooms, setRooms] = useState<DbSavedRoom[]>([]);
+  const [members, setMembers] = useState<DbSavedMember[]>([]);
   const [activeTab, setActiveTab] = useState<'rooms' | 'members'>('rooms');
   const [loading, setLoading] = useState(true);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [editingMember, setEditingMember] = useState<import('@/lib/db').DbSavedMember | null>(null);
+  const [editingMember, setEditingMember] = useState<DbSavedMember | null>(null);
   const [editMemberName, setEditMemberName] = useState('');
   const [editMemberAvatar, setEditMemberAvatar] = useState('');
 
   const reload = async () => {
     if (!deviceId) return;
-    const { dbRooms, dbMembers } = await import('@/lib/db');
-    setRooms(await dbRooms.list(deviceId));
-    setMembers(await dbMembers.list(deviceId));
+    const repo = await getRepository();
+    setRooms(await repo.rooms.list(deviceId));
+    setMembers(await repo.members.list(deviceId));
     setLoading(false);
   };
 
@@ -39,8 +41,8 @@ export default function ManageRoomsPage() {
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(t('manage.deleteRoomConfirm'))) return;
-    const { dbRooms } = await import('@/lib/db');
-    await dbRooms.delete(id);
+    const repo = await getRepository();
+    await repo.rooms.delete(id);
     await reload();
   };
 
@@ -52,16 +54,16 @@ export default function ManageRoomsPage() {
       return;
     }
 
-    const { dbRooms } = await import('@/lib/db');
-    await dbRooms.update(id, { name: editName.trim() });
+    const repo = await getRepository();
+    await repo.rooms.update(id, { name: editName.trim() });
     setEditingId(null);
     await reload();
   };
 
   const handleSaveMember = async () => {
     if (!editingMember || !editMemberName.trim()) return;
-    const { dbMembers } = await import('@/lib/db');
-    await dbMembers.upsert({
+    const repo = await getRepository();
+    await repo.members.upsert({
       id: editingMember.id,
       device_id: editingMember.device_id,
       name: editMemberName.trim(),
@@ -73,8 +75,8 @@ export default function ManageRoomsPage() {
 
   const handleDeleteMember = async (id: string) => {
     if (!confirm(t('manage.deleteMemberConfirm' as Parameters<typeof t>[0]))) return;
-    const { dbMembers } = await import('@/lib/db');
-    await dbMembers.delete(id);
+    const repo = await getRepository();
+    await repo.members.delete(id);
     await reload();
   };
 

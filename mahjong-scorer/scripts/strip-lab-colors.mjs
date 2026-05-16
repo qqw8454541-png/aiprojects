@@ -62,6 +62,12 @@ function stripLabColors(css) {
     '$1#$2'
   );
 
+  // 5. Strip "in oklab" and "in lab" from gradient interpolation.
+  //    Tailwind v4 emits e.g. "to right in oklab" which Android WebView
+  //    doesn't support, causing the entire gradient to be ignored.
+  modified = modified.replace(/\bin\s+oklab\b/g, '');
+  modified = modified.replace(/\bin\s+lab\b/g, '');
+
   return modified;
 }
 

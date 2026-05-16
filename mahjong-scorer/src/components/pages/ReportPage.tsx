@@ -7,6 +7,7 @@ import type { Player } from '@/lib/store';
 import { getEvaluationsBatch, type PlayerEvalStats } from '@/lib/evaluations';
 import { QRCodeSVG } from 'qrcode.react';
 import { useTheme } from 'next-themes';
+import { Loader2 } from 'lucide-react';
 
 
 
@@ -236,13 +237,14 @@ export default function ReportPage() {
         <div className="space-y-3 relative z-10">
           {sortedPlayers.map(([playerId, pt], idx) => {
             const playerName = playerNamesMap[playerId] ?? '?';
-            const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '';
+            // Rank badge colors for cross-platform support (medal emojis may not render on Android)
+            const rankBadgeColor = idx === 0 ? 'bg-amber-500 text-white' : idx === 1 ? 'bg-zinc-400 text-white' : idx === 2 ? 'bg-orange-700 text-white' : 'bg-zinc-600 text-white';
             return (
               <div key={playerId} className="flex flex-col bg-zinc-50 dark:bg-zinc-800/60 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700/30">
                 <div className="flex justify-between items-center mb-2">
                   <div className="flex items-center gap-3">
-                    <div className={`w-6 text-center font-bold font-mono text-lg ${idx === 0 ? 'text-amber-500 dark:text-amber-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
-                      {medal || (idx + 1)}
+                    <div className={`w-7 h-7 flex items-center justify-center rounded-lg text-sm font-black ${rankBadgeColor}`}>
+                      {idx + 1}
                     </div>
                     <div className="font-medium text-zinc-900 dark:text-zinc-200 text-lg">{playerName}</div>
                   </div>
@@ -253,7 +255,14 @@ export default function ReportPage() {
                 
                 {/* Humorous Comment */}
                 <div className="text-[11px] text-zinc-600 dark:text-zinc-400 italic mb-2 mt-[-2px] leading-snug">
-                  &quot;{isEvaluating ? t('room.calculating' as Parameters<typeof t>[0]) + '...' : (evaluations[playerId] || '...')}&quot;
+                  {isEvaluating ? (
+                    <span className="flex items-center gap-1 opacity-80">
+                      <Loader2 className="w-3 h-3 animate-spin text-zinc-500" />
+                      {t('room.calculating' as Parameters<typeof t>[0])}...
+                    </span>
+                  ) : (
+                    <>&quot;{evaluations[playerId] || '...'}&quot;</>
+                  )}
                 </div>
                 
                 {/* Round breakdown */}
@@ -306,12 +315,16 @@ export default function ReportPage() {
               : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 active:scale-95'
           }`}
         >
-          {isEvaluating 
-            ? `🤔 ${t('room.calculating' as Parameters<typeof t>[0])}...` 
-            : evalCooldown > 0 
-              ? `⏳ ${evalCooldown}s` 
-              : `✨ ${t('room.regenerate' as Parameters<typeof t>[0])}`
-          }
+          {isEvaluating ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin opacity-80" />
+              {t('room.calculating' as Parameters<typeof t>[0])}...
+            </span>
+          ) : evalCooldown > 0 ? (
+            `⏳ ${evalCooldown}s` 
+          ) : (
+            `✨ ${t('room.regenerate' as Parameters<typeof t>[0])}`
+          )}
         </button>
 
         <button

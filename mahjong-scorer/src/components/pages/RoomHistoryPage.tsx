@@ -3,18 +3,20 @@ import { useState, useEffect, useRef } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { useGameStore } from '@/lib/store';
 import type { Player } from '@/lib/store';
+import { getRepository } from '@/lib/repo-factory';
+import type { DbCompletedSession } from '@/lib/repository';
 
 export default function RoomHistoryPage() {
   const { t } = useI18n();
   const { deviceId, viewingHistoryRoomId, setPage } = useGameStore();
-  const [sessions, setSessions] = useState<import('@/lib/db').DbCompletedSession[]>([]);
+  const [sessions, setSessions] = useState<DbCompletedSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string[]>([]);
 
   useEffect(() => {
     if (!deviceId || !viewingHistoryRoomId) return;
-    import('@/lib/db').then(({ dbSessions }) => {
-      dbSessions.list(deviceId, viewingHistoryRoomId)
+    getRepository().then((repo) => {
+      repo.sessions.list(deviceId, viewingHistoryRoomId)
         .then((d) => { setSessions(d); setLoading(false); })
         .catch((err) => {
           console.error("Failed to load history:", err);
@@ -22,7 +24,7 @@ export default function RoomHistoryPage() {
           setLoading(false);
         });
     }).catch((err) => {
-      console.error("Failed to import db:", err);
+      console.error("Failed to initialize repository:", err);
       setLoading(false);
     });
   }, [deviceId, viewingHistoryRoomId]);

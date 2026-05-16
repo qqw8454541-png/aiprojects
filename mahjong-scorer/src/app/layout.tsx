@@ -3,6 +3,7 @@ import { Noto_Sans_JP } from 'next/font/google';
 import I18nProvider from '@/components/I18nProvider';
 import ThemeProviders from '@/components/ThemeProviders';
 import TopBar from '@/components/TopBar';
+import SwipeNavigation from '@/components/SwipeNavigation';
 import { SyncProvider } from '@/components/SyncProvider';
 import './globals.css';
 
@@ -38,6 +39,7 @@ export default function RootLayout({
           <I18nProvider>
             <SyncProvider>
               <TopBar />
+              <SwipeNavigation />
               {children}
             </SyncProvider>
           </I18nProvider>

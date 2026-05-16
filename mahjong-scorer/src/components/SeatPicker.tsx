@@ -10,11 +10,20 @@ interface SeatPickerProps {
   onAssignSeat: (wind: Wind, playerId: string | null) => void;
 }
 
-const WIND_EMOJI: Record<Wind, string> = {
-  east: '🀀',
-  south: '🀁',
-  west: '🀂',
-  north: '🀃',
+// Text-based wind labels (Mahjong tile emojis U+1F000–U+1F003 are not
+// supported on most Android devices and render as blank boxes)
+const WIND_LABEL: Record<Wind, string> = {
+  east: '東',
+  south: '南',
+  west: '西',
+  north: '北',
+};
+
+const WIND_BADGE_COLOR: Record<Wind, string> = {
+  east: 'bg-red-500 text-white',
+  south: 'bg-emerald-500 text-white',
+  west: 'bg-blue-500 text-white',
+  north: 'bg-purple-500 text-white',
 };
 
 const WIND_BG: Record<Wind, string> = {
@@ -69,7 +78,7 @@ export default function SeatPicker({
           >
             {/* Wind label */}
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-2xl">{WIND_EMOJI[seat.wind]}</span>
+              <span className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-black ${WIND_BADGE_COLOR[seat.wind]}`}>{WIND_LABEL[seat.wind]}</span>
               <span className="text-lg font-bold text-zinc-800 dark:text-zinc-200">
                 {windKeys[seat.wind]}
               </span>

@@ -8,14 +8,14 @@ interface ResultCardProps {
   roundNumber: number;
 }
 
-const RANK_DECORATIONS = [
-  'from-amber-50 to-amber-100/50 border-amber-200 dark:from-amber-500/20 dark:to-yellow-600/10 dark:border-amber-500/60', // 1st
-  'from-zinc-50 to-zinc-100/50 border-zinc-200 dark:from-zinc-400/10 dark:to-zinc-500/5 dark:border-zinc-400/40',       // 2nd
-  'from-orange-50 to-orange-100/50 border-orange-200 dark:from-orange-800/10 dark:to-orange-900/5 dark:border-orange-700/30',  // 3rd
-  'from-zinc-100 to-zinc-50/50 border-zinc-200 dark:from-zinc-800/10 dark:to-zinc-900/5 dark:border-zinc-700/20',        // 4th
+// Rank decorations — styled badges instead of emojis for cross-platform support.
+// Medal emojis 🥇🥈🥉 may not render on some Android WebView versions.
+const RANK_BADGE_COLORS = [
+  'bg-amber-500 text-white',   // 1st - gold
+  'bg-zinc-400 text-white',    // 2nd - silver
+  'bg-orange-700 text-white',  // 3rd - bronze
+  'bg-zinc-600 text-white',    // 4th
 ];
-
-const RANK_LABELS = ['🥇', '🥈', '🥉', '4'];
 
 export default function ResultCard({ results, roundNumber }: ResultCardProps) {
   const { t } = useI18n();
@@ -43,13 +43,17 @@ export default function ResultCard({ results, roundNumber }: ResultCardProps) {
             key={result.playerId}
             className={`
               flex items-center gap-3 rounded-xl border p-3
-              bg-gradient-to-r ${RANK_DECORATIONS[index]}
+              ${index === 0 ? 'bg-gradient-to-r from-amber-50 to-amber-100/50 border-amber-200 dark:from-amber-500/20 dark:to-yellow-600/10 dark:border-amber-500/60'
+                : index === 1 ? 'bg-gradient-to-r from-zinc-50 to-zinc-100/50 border-zinc-200 dark:from-zinc-400/10 dark:to-zinc-500/5 dark:border-zinc-400/40'
+                : index === 2 ? 'bg-gradient-to-r from-orange-50 to-orange-100/50 border-orange-200 dark:from-orange-800/10 dark:to-orange-900/5 dark:border-orange-700/30'
+                : 'bg-gradient-to-r from-zinc-100 to-zinc-50/50 border-zinc-200 dark:from-zinc-800/10 dark:to-zinc-900/5 dark:border-zinc-700/20'
+              }
               transition-all
             `}
           >
             {/* Rank */}
-            <div className="text-2xl w-10 text-center flex-shrink-0">
-              {RANK_LABELS[index]}
+            <div className={`w-10 h-10 flex items-center justify-center rounded-xl text-lg font-black ${RANK_BADGE_COLORS[index] || 'bg-zinc-600 text-white'}`}>
+              {index + 1}
             </div>
 
             {/* Player info */}

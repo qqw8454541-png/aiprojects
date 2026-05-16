@@ -5,6 +5,8 @@ import { useI18n } from '@/lib/i18n';
 import { useGameStore } from '@/lib/store';
 import Avatar from '@/components/Avatar';
 import type { Player } from '@/lib/store';
+import { getRepository } from '@/lib/repo-factory';
+import type { DbSavedMember } from '@/lib/repository';
 
 export default function RoomPage() {
   const { t } = useI18n();
@@ -22,7 +24,7 @@ export default function RoomPage() {
   const [editAvatar, setEditAvatar] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState('');
-  const [savedMembers, setSavedMembers] = useState<import('@/lib/db').DbSavedMember[]>([]);
+  const [savedMembers, setSavedMembers] = useState<DbSavedMember[]>([]);
 
   // Modal states for end-match flow (replaces window.confirm/prompt which don't work on Android WebView)
   const [showEndConfirm, setShowEndConfirm] = useState(false);
@@ -31,9 +33,9 @@ export default function RoomPage() {
 
   useEffect(() => {
     if (!deviceId) return;
-    import('@/lib/db').then(({ dbMembers }) => {
-      dbMembers.list(deviceId).then(members => {
-        const unique = [];
+    getRepository().then((repo) => {
+      repo.members.list(deviceId).then(members => {
+        const unique: DbSavedMember[] = [];
         const seen = new Set();
         for (const m of members) {
           if (!seen.has(m.name)) {
@@ -61,8 +63,16 @@ export default function RoomPage() {
     setNickname('');
   }
 
-  const WIND_EMOJI: Record<string, string> = {
-    east: '🀀', south: '🀁', west: '🀂', north: '🀃',
+  // Text-based wind labels (Mahjong tile emojis U+1F000–U+1F003 are not
+  // supported on most Android devices and render as blank boxes)
+  const WIND_LABEL: Record<string, string> = {
+    east: '東', south: '南', west: '西', north: '北',
+  };
+  const WIND_BADGE_COLOR: Record<string, string> = {
+    east: 'bg-red-500 text-white',
+    south: 'bg-emerald-500 text-white',
+    west: 'bg-blue-500 text-white',
+    north: 'bg-purple-500 text-white',
   };
   const WIND_BG: Record<string, string> = {
     east: 'from-red-50 to-red-100/50 border-red-200 dark:from-red-900/60 dark:to-red-950/80 dark:border-red-700/50',
@@ -182,7 +192,7 @@ export default function RoomPage() {
                 `}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl">{WIND_EMOJI[seat.wind]}</span>
+                  <span className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-black ${WIND_BADGE_COLOR[seat.wind]}`}>{WIND_LABEL[seat.wind]}</span>
                   <span className="text-lg font-bold text-zinc-800 dark:text-zinc-200">
                     {t(`room.${seat.wind}` as 'room.east' | 'room.south' | 'room.west' | 'room.north')}
                   </span>
@@ -397,8 +407,8 @@ export default function RoomPage() {
                         .filter(Boolean);
 
                       if (seatedPlayers.length === limit) {
-                        const { dbRooms } = await import('@/lib/db');
-                        const existingRooms = await dbRooms.list(deviceId);
+                        const repo = await getRepository();
+                        const existingRooms = await repo.rooms.list(deviceId);
                         const currentNames = [...players.map(p => p!.name)].sort();
 
                         let isDuplicate = false;

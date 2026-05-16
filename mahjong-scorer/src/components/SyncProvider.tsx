@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useGameStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
+import { getPlatformType } from '@/lib/repo-factory';
 
 // Helper to omit functions, transient UI state, and viewingRoundId that shouldn't override other clients
 const getDbState = (state: ReturnType<typeof useGameStore.getState>) => {
@@ -23,6 +24,9 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   const isUpdatingFromDb = useRef(false);
   
   useEffect(() => {
+    // Native platforms use local SQLite — skip cloud sync
+    if (getPlatformType() === 'native') return;
+
     // 1. Subscribe to the Zustand store changes to push to DB
     const unsubscribeStore = useGameStore.subscribe(async (state, prevState) => {
       // Don't push to DB if the change came from the DB sync itself
@@ -51,6 +55,9 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Native platforms use local SQLite — skip Realtime subscriptions
+    if (getPlatformType() === 'native') return;
+
     // 2. Subscribe to Supabase Database changes to update Zustand
     let subscription: ReturnType<typeof supabase.channel> | null = null;
     

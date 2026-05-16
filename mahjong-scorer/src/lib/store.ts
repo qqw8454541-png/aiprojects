@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { RuleConfig } from './rules';
 import type { PlayerResult, Wind } from './scoring';
-import { dbRooms, dbMembers, dbRoomMembers, dbSessions } from './db';
+import { getRepository } from './repo-factory';
 import { safeRandomUUID } from './utils';
 
 // ────────────────────────── Types ──────────────────────────────
@@ -399,6 +399,7 @@ export const useGameStore = create<GameState>()(
       // ── Supabase actions ─────────────────────────────────────
 
       saveCurrentRoom: async (overrideName?: string) => {
+        const repo = await getRepository();
         const state = get();
         const deviceId = state.deviceId || getOrCreateDeviceId();
         const roomName = (overrideName || state.roomName)?.trim();
@@ -410,7 +411,7 @@ export const useGameStore = create<GameState>()(
         const playersToSave = [...state.players];
 
         // Check for duplicate room with exact same members
-        const existingRooms = await dbRooms.list(deviceId);
+        const existingRooms = await repo.rooms.list(deviceId);
         const currentNames = [...playersToSave.map(p => p.name)].sort();
         for (const room of existingRooms) {
           if (!room.members) continue;
@@ -426,7 +427,7 @@ export const useGameStore = create<GameState>()(
         const newPlayers = [...state.players];
         
         for (const player of playersToSave) {
-          const member = await dbMembers.upsert({
+          const member = await repo.members.upsert({
             id: player.savedMemberId || safeRandomUUID(), // use existing or generate new proper UUID
             device_id: deviceId,
             name: player.name,
@@ -444,14 +445,15 @@ export const useGameStore = create<GameState>()(
         set({ players: newPlayers });
 
         // Insert room
-        const newRoom = await dbRooms.insert(deviceId, roomName, state.rules, memberIds);
+        const newRoom = await repo.rooms.insert(deviceId, roomName, state.rules, memberIds);
         set({ sessionSavedRoomId: newRoom.id });
         await get().archiveSession();
       },
 
       loadSavedRoom: async (roomId: string) => {
+        const repo = await getRepository();
         const state = get();
-        const room = await dbRooms.get(roomId);
+        const room = await repo.rooms.get(roomId);
         if (!room) throw new Error('room_not_found');
 
         const code = generateRoomCode();
@@ -490,6 +492,7 @@ export const useGameStore = create<GameState>()(
       },
 
       archiveSession: async () => {
+        const repo = await getRepository();
         const state = get();
         const deviceId = state.deviceId || getOrCreateDeviceId();
         const completedRounds = state.rounds.filter(
@@ -498,14 +501,14 @@ export const useGameStore = create<GameState>()(
         if (completedRounds.length === 0) return;
 
         if (state.currentSessionDbId) {
-          await dbSessions.update(state.currentSessionDbId, {
+          await repo.sessions.update(state.currentSessionDbId, {
             saved_room_id: state.sessionSavedRoomId ?? null,
             room_name: state.roomName ?? 'Unnamed',
             rounds: completedRounds,
             players: state.players,
           });
         } else {
-          const inserted = await dbSessions.insert({
+          const inserted = await repo.sessions.insert({
             device_id: deviceId,
             saved_room_id: state.sessionSavedRoomId ?? null,
             room_name: state.roomName ?? 'Unnamed',

@@ -42,9 +42,13 @@ export async function getEvaluationsBatch(players: PlayerEvalStats[], locale: st
 
     if (!response.ok) {
       const text = await response.text();
-      console.error("LLM API Error:", response.status, text);
+      console.error(`LLM API Error [${response.status}]:`, text);
       if (response.status === 429) {
         return { error: 'QUOTA_EXCEEDED' };
+      }
+      if (response.status === 404) {
+        console.error(`Model "${LLM_CONFIG.MODEL_ID}" not found. Check llm.config.ts MODEL_ID.`);
+        return { error: 'GENERAL_API_ERROR' };
       }
       return { error: 'GENERAL_API_ERROR' };
     }
