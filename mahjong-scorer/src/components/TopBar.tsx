@@ -134,7 +134,7 @@ export default function TopBar() {
 
   return (
     <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300
+      className={`fixed top-0 left-0 right-0 z-50 safe-area-pt transition-all duration-300
         ${isScrolled 
           ? 'bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 shadow-sm py-2 px-4' 
           : 'bg-transparent border-transparent py-4 px-4'}

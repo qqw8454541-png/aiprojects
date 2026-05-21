@@ -7,6 +7,7 @@ import Avatar from '@/components/Avatar';
 import { safeRandomUUID } from '@/lib/utils';
 import { getRepository } from '@/lib/repo-factory';
 import type { DbSavedRoom, DbSavedMember } from '@/lib/repository';
+import { hapticWarning } from '@/lib/haptics';
 
 export default function ManageRoomsPage() {
   const { t } = useI18n();
@@ -40,6 +41,7 @@ export default function ManageRoomsPage() {
   }, [deviceId]);
 
   const handleDelete = async (id: string, name: string) => {
+    hapticWarning();
     if (!confirm(t('manage.deleteRoomConfirm'))) return;
     const repo = await getRepository();
     await repo.rooms.delete(id);
@@ -74,6 +76,7 @@ export default function ManageRoomsPage() {
   };
 
   const handleDeleteMember = async (id: string) => {
+    hapticWarning();
     if (!confirm(t('manage.deleteMemberConfirm' as Parameters<typeof t>[0]))) return;
     const repo = await getRepository();
     await repo.members.delete(id);

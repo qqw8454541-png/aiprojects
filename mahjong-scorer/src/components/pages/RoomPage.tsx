@@ -7,6 +7,7 @@ import Avatar from '@/components/Avatar';
 import type { Player } from '@/lib/store';
 import { getRepository } from '@/lib/repo-factory';
 import type { DbSavedMember } from '@/lib/repository';
+import { hapticMedium, hapticWarning, hapticSuccess } from '@/lib/haptics';
 
 export default function RoomPage() {
   const { t } = useI18n();
@@ -181,6 +182,7 @@ export default function RoomPage() {
                     setSwapFrom(null);
                   } else {
                     swapSeats(swapFrom, idx);
+                    hapticMedium();
                     setSwapFrom(null);
                   }
                 }}
@@ -255,13 +257,13 @@ export default function RoomPage() {
         <div className="mb-5 space-y-2">
           <div className="flex gap-2">
             <button
-              onClick={() => { rotateSeatsCW(); setSwapFrom(null); }}
+              onClick={() => { rotateSeatsCW(); hapticMedium(); setSwapFrom(null); }}
               className="flex-1 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-600/20 border border-indigo-200 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-300 text-sm font-medium hover:bg-indigo-100 dark:hover:bg-indigo-600/30 active:scale-[0.97] transition-all"
             >
               🔄 {t('score.rotateCW')}
             </button>
             <button
-              onClick={() => { shuffleSeats(); setSwapFrom(null); }}
+              onClick={() => { shuffleSeats(); hapticMedium(); setSwapFrom(null); }}
               className="flex-1 py-2.5 rounded-xl bg-purple-50 dark:bg-purple-600/20 border border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-300 text-sm font-medium hover:bg-purple-100 dark:hover:bg-purple-600/30 active:scale-[0.97] transition-all"
             >
               🎲 {t('score.shuffle')}
@@ -358,9 +360,9 @@ export default function RoomPage() {
 
       {/* End Today Match Button */}
       {rounds.length > 0 && (
-        <div className="mt-4 pb-8">
+        <div className="mt-4 pb-8 safe-area-pb">
           <button
-            onClick={() => setShowEndConfirm(true)}
+            onClick={() => { hapticWarning(); setShowEndConfirm(true); }}
             className="w-full py-4 rounded-xl font-bold text-rose-500 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 active:scale-[0.98] transition-all shadow-sm"
           >
             {t('room.endTodayMatch' as Parameters<typeof t>[0])}
@@ -507,6 +509,7 @@ export default function RoomPage() {
                       if (!pendingRoomName.trim()) return;
                       setShowNamingModal(false);
                       saveCurrentRoom(pendingRoomName.trim())
+                        .then(() => hapticSuccess())
                         .catch((err) => console.error('Failed to save room:', err))
                         .finally(() => {
                           resetRoom();

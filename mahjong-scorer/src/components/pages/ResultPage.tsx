@@ -113,7 +113,7 @@ export default function ResultPage() {
       )}
 
       {/* Action buttons */}
-      <div className="mt-6 space-y-3 pb-8">
+      <div className="mt-6 space-y-3 pb-8 safe-area-pb">
         <button
           onClick={() => startNewRound()}
           className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 text-white text-base font-bold

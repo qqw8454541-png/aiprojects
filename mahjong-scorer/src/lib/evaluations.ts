@@ -1,6 +1,6 @@
 // This function runs client-side (no "use server") to support both web and static APK builds.
 // Requires NEXT_PUBLIC_GEMINI_API_KEY in .env.local / Vercel environment.
-import { LLM_CONFIG } from './llm.config';
+import { LLM_CONFIG, type ScoringContext } from './llm.config';
 
 export type Locale = 'zh' | 'ja' | 'en';
 
@@ -12,7 +12,7 @@ export interface PlayerEvalStats {
   history: number[];
 }
 
-export async function getEvaluationsBatch(players: PlayerEvalStats[], locale: string): Promise<{ data?: Record<string, string>, error?: string }> {
+export async function getEvaluationsBatch(players: PlayerEvalStats[], locale: string, scoringCtx?: ScoringContext): Promise<{ data?: Record<string, string>, error?: string }> {
   const lang = (locale === 'ja' || locale === 'zh') ? locale : 'en';
   const langName = lang === 'zh' ? 'Simplified Chinese' : lang === 'ja' ? 'Japanese' : 'English';
   
@@ -21,7 +21,7 @@ export async function getEvaluationsBatch(players: PlayerEvalStats[], locale: st
     return { error: 'NO_API_KEY' };
   }
 
-  const prompt = LLM_CONFIG.buildPrompt(JSON.stringify(players, null, 2), langName);
+  const prompt = LLM_CONFIG.buildPrompt(JSON.stringify(players, null, 2), langName, scoringCtx);
   const apiUrl = LLM_CONFIG.buildApiUrl(LLM_CONFIG.MODEL_ID, apiKey);
 
   try {
@@ -35,7 +35,8 @@ export async function getEvaluationsBatch(players: PlayerEvalStats[], locale: st
           parts: [{ text: prompt }]
         }],
         generationConfig: {
-          temperature: 0.8,
+          temperature: 1.2,
+          topP: 0.95,
         }
       })
     });

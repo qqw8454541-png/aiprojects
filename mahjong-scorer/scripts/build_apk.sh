@@ -3,12 +3,12 @@
 # Mahjong Scorer - Android APK Build Script
 #
 # Usage:
-#   ./scripts/build_apk.sh only   - 只编译前端网页代码并将其复制到 Android 目录，然后打出 APK（速度较快，适合仅仅改了前端代码）
-#   ./scripts/build_apk.sh sync   - 完整执行前端编译、运行 cap sync 同步原生插件及配置、最后打出 APK（添加/删除原生插件、或者修改了 capacitor 配置时使用）
+#   ./mahjong-scorer/scripts/build_apk.sh only   - 只编译前端网页代码并将其复制到 Android 目录，然后打出 APK（速度较快，适合仅仅改了前端代码）
+#   ./mahjong-scorer/scripts/build_apk.sh sync   - 完整执行前端编译、运行 cap sync 同步原生插件及配置、最后打出 APK（添加/删除原生插件、或者修改了 capacitor 配置时使用）
 
 set -e
 
-PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_DIR" || exit 1
 
 # Colors for output

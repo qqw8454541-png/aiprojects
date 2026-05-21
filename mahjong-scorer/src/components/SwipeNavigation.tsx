@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useNavigationHistory } from '@/lib/useNavigationHistory';
 import { useGameStore } from '@/lib/store';
+import { hapticHeavy } from '@/lib/haptics';
 
 /** Minimum swipe distance (px) to trigger navigation */
 const SWIPE_THRESHOLD = 80;
@@ -120,9 +121,11 @@ export default function SwipeNavigation() {
 
     if (dx > SWIPE_THRESHOLD && canGoBack) {
       // Right swipe → back
+      hapticHeavy();
       goBack();
     } else if (dx < -SWIPE_THRESHOLD && canGoForward) {
       // Left swipe → forward
+      hapticHeavy();
       goForward();
     }
   }, [canGoBack, canGoForward, goBack, goForward]);

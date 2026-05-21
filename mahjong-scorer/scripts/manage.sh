@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Mahjong Scorer - Project Management Script
-# Usage: ./scripts/manage.sh [start|stop|status|restart]
+# Usage: ./mahjong-scorer/scripts/manage.sh [start|stop|status|restart]
 
 SESSION_NAME="mahjong-scorer"
-PROJECT_DIR="/root/aiprojects/mahjong-scorer"
+PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 cd "$PROJECT_DIR" || exit 1
 

@@ -1,13 +1,7 @@
 'use client';
 
 import { useI18n } from '@/lib/i18n';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
-
-const vibrate = () => {
-  try {
-    Haptics.impact({ style: ImpactStyle.Light }).catch(() => {});
-  } catch (e) {}
-};
+import { hapticLight } from '@/lib/haptics';
 
 interface NumPadProps {
   onInput: (digit: string) => void;
@@ -41,39 +35,39 @@ export default function NumPad({
     <div className="grid grid-cols-4 gap-2 p-3 bg-zinc-100 dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800">
       {/* Row 1: 7 8 9 ⌫ */}
       {['7', '8', '9'].map((d) => (
-        <button key={d} className={digitBtn} onClick={() => { vibrate(); onInput(d); }}>
+        <button key={d} className={digitBtn} onClick={() => { hapticLight(); onInput(d); }}>
           {d}
         </button>
       ))}
       <button
         className={`${actionBtn} bg-amber-500 dark:bg-amber-700 text-amber-50 dark:text-amber-100 hover:bg-amber-600 dark:hover:bg-amber-600`}
-        onClick={() => { vibrate(); onBackspace(); }}
+        onClick={() => { hapticLight(); onBackspace(); }}
       >
         ⌫
       </button>
 
       {/* Row 2: 4 5 6 ± */}
       {['4', '5', '6'].map((d) => (
-        <button key={d} className={digitBtn} onClick={() => { vibrate(); onInput(d); }}>
+        <button key={d} className={digitBtn} onClick={() => { hapticLight(); onInput(d); }}>
           {d}
         </button>
       ))}
       <button
         className={`${actionBtn} bg-indigo-500 dark:bg-indigo-700 text-indigo-50 dark:text-indigo-100 hover:bg-indigo-600 dark:hover:bg-indigo-600`}
-        onClick={() => { vibrate(); onToggleSign(); }}
+        onClick={() => { hapticLight(); onToggleSign(); }}
       >
         ±
       </button>
 
       {/* Row 3: 1 2 3 次 */}
       {['1', '2', '3'].map((d) => (
-        <button key={d} className={digitBtn} onClick={() => { vibrate(); onInput(d); }}>
+        <button key={d} className={digitBtn} onClick={() => { hapticLight(); onInput(d); }}>
           {d}
         </button>
       ))}
       <button
         className={`${actionBtn} bg-teal-600 dark:bg-teal-700 text-teal-50 dark:text-teal-100 hover:bg-teal-500 dark:hover:bg-teal-600`}
-        onClick={() => { vibrate(); onNext(); }}
+        onClick={() => { hapticLight(); onNext(); }}
       >
         {t('common.next')}
       </button>
@@ -81,7 +75,7 @@ export default function NumPad({
       {/* Row 4: 0 (2-wide), confirm or empty */}
       <button
         className={`${digitBtn} col-span-2`}
-        onClick={() => { vibrate(); onInput('0'); }}
+        onClick={() => { hapticLight(); onInput('0'); }}
       >
         0
       </button>
@@ -92,7 +86,7 @@ export default function NumPad({
               ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-400 dark:text-zinc-500 cursor-not-allowed border border-transparent dark:border-transparent'
               : 'bg-emerald-500 dark:bg-emerald-600 text-white hover:bg-emerald-600 dark:hover:bg-emerald-500 border border-emerald-600 dark:border-transparent shadow-emerald-900/20 shadow-md'
           }`}
-          onClick={() => { if (!confirmDisabled) { vibrate(); onConfirm(); } }}
+          onClick={() => { if (!confirmDisabled) { hapticLight(); onConfirm(); } }}
           disabled={confirmDisabled}
         >
           {confirmLabel || t('score.calculate')}

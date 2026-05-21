@@ -8,6 +8,7 @@ import { abbreviatedToFull, calculateLastScore, calculatePT } from '@/lib/scorin
 import RulePresets from '@/components/RulePresets';
 import NumPad from '@/components/NumPad';
 import ScoreDisplay from '@/components/ScoreDisplay';
+import { hapticSuccess } from '@/lib/haptics';
 import type { Player } from '@/lib/store';
 
 export default function ScorePage() {
@@ -145,6 +146,7 @@ export default function ScorePage() {
     if (!rules) return;
 
     const results: PlayerResult[] = calculatePT(playerScores, rules);
+    hapticSuccess();
     completeRound(results);
   }
 

@@ -5,16 +5,21 @@ import { useGameStore } from '@/lib/store';
 import { toPng } from 'html-to-image';
 import type { Player } from '@/lib/store';
 import { getEvaluationsBatch, type PlayerEvalStats } from '@/lib/evaluations';
+import type { ScoringContext } from '@/lib/llm.config';
 import { QRCodeSVG } from 'qrcode.react';
 import { useTheme } from 'next-themes';
 import { Loader2 } from 'lucide-react';
 
 
 
+import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+
 export default function ReportPage() {
   const { t, locale } = useI18n();
   const { theme } = useTheme();
-  const { roomName, rounds, players, setPage } = useGameStore();
+  const { roomName, rounds, players, rules, setPage } = useGameStore();
 
   const completedRounds = rounds.filter(r => r.status === 'completed' && r.results);
 
@@ -102,7 +107,8 @@ export default function ReportPage() {
         history: completedRounds.map(r => r.results?.find(res => res.playerId === playerId)?.pt || 0)
       }));
 
-      const result = await getEvaluationsBatch(playersData, locale);
+      const scoringCtx: ScoringContext | undefined = rules ? { ruleName: rules.name, uma: rules.uma, roundCount: completedRounds.length } : undefined;
+      const result = await getEvaluationsBatch(playersData, locale, scoringCtx);
       
       if (result.error) {
         let errorMsg = t('eval.apiError' as Parameters<typeof t>[0]) || "Error";
@@ -189,7 +195,7 @@ export default function ReportPage() {
     };
   }, [theme, isEvaluating, evaluations]);
 
-  function handleDownload() {
+  async function handleDownload() {
     if (!shareFile || !dataUrl) return;
 
     const fallbackDownload = () => {
@@ -200,6 +206,30 @@ export default function ReportPage() {
       link.click();
       document.body.removeChild(link);
     };
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const base64Data = dataUrl.split(',')[1];
+        const filename = `mahjong-report-${Date.now()}.png`;
+        
+        const savedFile = await Filesystem.writeFile({
+          path: filename,
+          data: base64Data,
+          directory: Directory.Cache
+        });
+
+        await Share.share({
+          title: t('result.downloadImage' as Parameters<typeof t>[0]),
+          text: roomName || t('room.title' as Parameters<typeof t>[0]),
+          url: savedFile.uri,
+          dialogTitle: t('result.downloadImage' as Parameters<typeof t>[0]),
+        });
+      } catch (err) {
+        console.error('Capacitor share failed', err);
+        fallbackDownload();
+      }
+      return;
+    }
 
     if (navigator.share) {
       if (navigator.canShare && !navigator.canShare({ files: [shareFile] })) {
@@ -305,7 +335,7 @@ export default function ReportPage() {
         </div>
       </div>
 
-      <div className="mt-8 flex flex-col gap-3 w-full max-w-sm">
+      <div className="mt-8 flex flex-col gap-3 w-full max-w-sm safe-area-pb">
         <button
           onClick={() => fetchEvaluations(true)}
           disabled={isEvaluating || evalCooldown > 0}

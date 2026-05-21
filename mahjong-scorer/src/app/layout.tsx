@@ -16,6 +16,15 @@ const notoSansJP = Noto_Sans_JP({
 export const metadata: Metadata = {
   title: '麻雀スコアラー | Mahjong Scorer',
   description: 'オフライン麻雀の戦績管理ツール - Offline Riichi Mahjong Score Tracker',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'MJ Scorer',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
 };
 
 export const viewport: Viewport = {
@@ -23,6 +32,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#09090b',
 };
 
 export default function RootLayout({
@@ -32,8 +43,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+      </head>
       <body
-        className={`${notoSansJP.variable} font-sans antialiased bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-dvh`}
+        className={`${notoSansJP.variable} font-sans antialiased bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-dvh safe-area-px`}
       >
         <ThemeProviders>
           <I18nProvider>
