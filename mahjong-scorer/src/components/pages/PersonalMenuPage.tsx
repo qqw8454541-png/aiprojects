@@ -16,8 +16,8 @@ export default function PersonalMenuPage() {
             icon: '🎮',
             label: 'room.continueMatch' as any,
             desc: 'personal.newGameDesc' as any,
-            color: 'from-amber-500 to-orange-500 dark:from-amber-600 dark:to-orange-600',
-            shadow: 'shadow-amber-900/20',
+            color: 'from-emerald-500 to-teal-500 dark:from-emerald-600 dark:to-teal-600',
+            shadow: 'shadow-emerald-900/20',
             textColor: 'text-white',
           },
         ]
@@ -36,9 +36,9 @@ export default function PersonalMenuPage() {
       icon: '⚙️',
       label: 'personal.manageRooms' as any,
       desc: 'personal.manageRoomsDesc' as any,
-      color: 'from-zinc-600 to-zinc-700 dark:from-zinc-700 dark:to-zinc-800',
-      shadow: 'shadow-zinc-900/20',
-      textColor: 'text-white',
+      color: 'from-zinc-200 to-zinc-300 dark:from-zinc-600 dark:to-zinc-700',
+      shadow: 'shadow-zinc-300/50 dark:shadow-zinc-900/20',
+      textColor: 'text-zinc-800 dark:text-zinc-100',
     },
   ];
 

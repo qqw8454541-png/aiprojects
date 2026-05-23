@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">MahjongScorer</string>
-    <string name="title_activity_main">MahjongScorer</string>
+    <string name="app_name">デジタル点棒</string>
+    <string name="title_activity_main">デジタル点棒</string>
     <string name="package_name">com.mahjongscorer.app</string>
     <string name="custom_url_scheme">com.mahjongscorer.app</string>
 </resources>

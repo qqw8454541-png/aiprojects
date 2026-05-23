@@ -9,8 +9,9 @@ export default function ThemeProviders({ children }: { children: React.ReactNode
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme={isNative ? 'dark' : 'system'}
-      enableSystem={!isNative}
+      defaultTheme="light"
+      forcedTheme="light"
+      enableSystem={false}
     >
       {children}
     </ThemeProvider>

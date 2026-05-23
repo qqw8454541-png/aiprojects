@@ -155,7 +155,7 @@ export default function ScorePage() {
       <div className="flex justify-end px-4 pb-3">
         <button 
           onClick={() => setIsEditingRules(true)}
-          className="text-xs font-medium text-zinc-500 hover:text-amber-600 dark:text-zinc-400 dark:hover:text-amber-500 transition-colors flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800/50 px-2 py-1 rounded-md"
+          className="text-xs font-medium text-zinc-500 hover:text-emerald-600 dark:text-zinc-400 dark:hover:text-emerald-500 transition-colors flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800/50 px-2 py-1 rounded-md"
         >
           ⚙️ {t('score.title')} Setup
         </button>
@@ -256,7 +256,7 @@ export default function ScorePage() {
                       }}
                       className={`py-2 rounded-lg text-center text-xs transition-all ${
                         isSelected
-                          ? 'bg-amber-100 dark:bg-amber-500/30 border-2 border-amber-400 dark:border-amber-400 ring-1 ring-amber-400/50 dark:ring-amber-400/50'
+                          ? 'bg-emerald-100 dark:bg-emerald-500/30 border-2 border-emerald-400 dark:border-emerald-400 ring-1 ring-emerald-400/50 dark:ring-emerald-400/50'
                           : 'bg-zinc-100 dark:bg-zinc-700/50 border border-zinc-200 dark:border-zinc-600 hover:bg-zinc-200 dark:hover:bg-zinc-600/50'
                       }`}
                     >
@@ -290,7 +290,7 @@ export default function ScorePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 glass-overlay flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
@@ -298,7 +298,7 @@ export default function ScorePage() {
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl w-full max-w-sm max-h-[90dvh] overflow-y-auto shadow-xl"
             >
-              <div className="p-4 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800 sticky top-0 bg-white/90 dark:bg-zinc-900/90 backdrop-blur z-10">
+              <div className="p-4 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800 sticky top-0 glass-header-light z-10">
                 <h3 className="font-bold text-zinc-900 dark:text-zinc-100">{t('create.title')}</h3>
                 <button
                   onClick={() => setIsEditingRules(false)}

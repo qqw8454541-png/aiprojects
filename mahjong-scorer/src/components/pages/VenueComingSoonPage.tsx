@@ -10,7 +10,7 @@ export default function VenueComingSoonPage() {
       <div className="text-6xl mb-6">🏮</div>
       <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 mb-3">{t('landing.venueMode')}</h1>
       <p className="text-zinc-500 dark:text-zinc-400 mb-10 max-w-xs">{t('landing.comingSoonDesc')}</p>
-      <div className="px-6 py-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-sm font-bold mb-10">
+      <div className="px-6 py-2 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-bold mb-10">
         🚧 {t('landing.comingSoon')}
       </div>
       <button

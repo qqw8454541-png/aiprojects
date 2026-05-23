@@ -40,7 +40,7 @@ export default function NumPad({
         </button>
       ))}
       <button
-        className={`${actionBtn} bg-amber-500 dark:bg-amber-700 text-amber-50 dark:text-amber-100 hover:bg-amber-600 dark:hover:bg-amber-600`}
+        className={`${actionBtn} bg-emerald-500 dark:bg-emerald-700 text-emerald-50 dark:text-emerald-100 hover:bg-emerald-600 dark:hover:bg-emerald-600`}
         onClick={() => { hapticLight(); onBackspace(); }}
       >
         ⌫

@@ -95,14 +95,14 @@ export default function RoomPage() {
               onChange={(e) => setNickname(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddPlayer()}
               className="flex-1 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-4 py-3 text-sm text-zinc-900 dark:text-zinc-100
-                         placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm"
+                         placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
               maxLength={10}
             />
             <button
               onClick={handleAddPlayer}
               disabled={!nickname.trim()}
-              className="px-5 py-3 rounded-xl bg-amber-500 dark:bg-amber-600 text-white font-bold text-sm
-                         hover:bg-amber-400 dark:hover:bg-amber-500 disabled:bg-zinc-200 dark:disabled:bg-zinc-700 disabled:text-zinc-400 dark:disabled:text-zinc-500 transition-all shadow-sm"
+              className="px-5 py-3 rounded-xl bg-emerald-500 dark:bg-emerald-600 text-white font-bold text-sm
+                         hover:bg-emerald-400 dark:hover:bg-emerald-500 disabled:bg-zinc-200 dark:disabled:bg-zinc-700 disabled:text-zinc-400 dark:disabled:text-zinc-500 transition-all shadow-sm"
             >
               +
             </button>
@@ -189,7 +189,7 @@ export default function RoomPage() {
                 className={`
                   relative rounded-2xl border bg-gradient-to-br p-4 text-left transition-all
                   ${WIND_BG[seat.wind]}
-                  ${isSwapSelected ? 'ring-2 ring-amber-400 scale-[1.03]' : ''}
+                  ${isSwapSelected ? 'ring-2 ring-emerald-400 scale-[1.03]' : ''}
                   ${allSeated ? 'cursor-pointer hover:scale-[1.02]' : 'cursor-default'}
                 `}
               >
@@ -221,7 +221,7 @@ export default function RoomPage() {
                           }}
                         >
                           <Avatar seed={player.avatarSeed} size={28} />
-                          <span className="text-sm sm:text-base font-medium text-amber-900 dark:text-amber-100 truncate hover:underline">{player.name}</span>
+                          <span className="text-sm sm:text-base font-medium text-emerald-900 dark:text-emerald-100 truncate hover:underline">{player.name}</span>
                         </div>
                         <button
                           onClick={(e) => {
@@ -377,7 +377,7 @@ export default function RoomPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 glass-overlay flex items-center justify-center p-4"
             onClick={() => setShowEndConfirm(false)}
           >
             <motion.div
@@ -453,7 +453,7 @@ export default function RoomPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 glass-overlay flex items-center justify-center p-4"
             onClick={() => {
               // Skip naming and just end match
               setShowNamingModal(false);
@@ -491,7 +491,7 @@ export default function RoomPage() {
                         });
                     }
                   }}
-                  className="w-full rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
                 <div className="flex gap-3">
                   <button
@@ -516,7 +516,7 @@ export default function RoomPage() {
                           setPage('personal-menu');
                         });
                     }}
-                    className="flex-1 py-3 rounded-xl bg-amber-500 text-white font-bold transition hover:bg-amber-400 active:scale-[0.97]"
+                    className="flex-1 py-3 rounded-xl bg-emerald-500 text-white font-bold transition hover:bg-emerald-400 active:scale-[0.97]"
                   >
                     {t('room.save' as Parameters<typeof t>[0])}
                   </button>
@@ -534,7 +534,7 @@ export default function RoomPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 glass-overlay flex items-center justify-center p-4"
             onClick={() => setEditingPlayer(null)}
           >
             <motion.div
@@ -555,7 +555,7 @@ export default function RoomPage() {
               </div>
               <div className="p-6 flex flex-col items-center">
                 <div className="relative mb-6 group cursor-pointer" onClick={() => setEditAvatar(Math.random().toString(36).substring(2, 10))}>
-                  <Avatar seed={editAvatar} size={96} className="ring-4 ring-amber-100 dark:ring-amber-900/30" />
+                  <Avatar seed={editAvatar} size={96} className="ring-4 ring-emerald-100 dark:ring-emerald-900/30" />
                   <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                     <span className="text-white text-xs font-bold pointer-events-none">{t('room.randomAvatar' as Parameters<typeof t>[0])}</span>
                   </div>
@@ -569,7 +569,7 @@ export default function RoomPage() {
                       maxLength={10}
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
-                      className="w-full rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="w-full rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
                   
@@ -580,7 +580,7 @@ export default function RoomPage() {
                         setEditingPlayer(null);
                       }
                     }}
-                    className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-bold transition shadow-sm"
+                    className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-bold transition shadow-sm"
                   >
                     {t('room.save' as Parameters<typeof t>[0])}
                   </button>

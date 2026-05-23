@@ -138,7 +138,7 @@ export default function ManageRoomsPage() {
                   {editingId === room.id ? (
                     <input
                       autoFocus
-                      className="text-base font-bold bg-transparent border-b border-amber-400 outline-none text-zinc-900 dark:text-zinc-100 w-48"
+                      className="text-base font-bold bg-transparent border-b border-emerald-500 outline-none text-zinc-900 dark:text-zinc-100 w-48"
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(room.id); e.stopPropagation(); }}
@@ -178,7 +178,7 @@ export default function ManageRoomsPage() {
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     {editingId === room.id ? (
-                      <button onClick={() => handleSaveName(room.id)} className="px-3 py-1.5 rounded-lg bg-amber-500 text-white text-sm font-bold">{t('manage.saveChanges')}</button>
+                      <button onClick={() => handleSaveName(room.id)} className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-sm font-bold">{t('manage.saveChanges')}</button>
                     ) : (
                       <button onClick={() => { setEditingId(room.id); setEditName(room.name); }} className="px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm font-medium">{t('manage.editName')}</button>
                     )}
@@ -210,7 +210,7 @@ export default function ManageRoomsPage() {
               setEditMemberName('');
               setEditMemberAvatar(seed);
             }}
-            className="w-full py-4 rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 font-bold hover:border-amber-400 hover:text-amber-500 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-4 rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 font-bold hover:border-emerald-500 hover:text-emerald-600 transition-colors flex items-center justify-center gap-2"
           >
             <span className="text-xl">+</span> {t('manage.newMember' as Parameters<typeof t>[0])}
           </button>
@@ -258,7 +258,7 @@ export default function ManageRoomsPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-[60] glass-overlay flex items-center justify-center p-4"
             onClick={() => setEditingMember(null)}
           >
             <motion.div
@@ -279,7 +279,7 @@ export default function ManageRoomsPage() {
               </div>
               <div className="p-6 flex flex-col items-center">
                 <div className="relative mb-6 group cursor-pointer" onClick={() => setEditMemberAvatar(Math.random().toString(36).substring(2, 10))}>
-                  <Avatar seed={editMemberAvatar} size={96} className="ring-4 ring-amber-100 dark:ring-amber-900/30" />
+                  <Avatar seed={editMemberAvatar} size={96} className="ring-4 ring-emerald-100 dark:ring-emerald-900/30" />
                   <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                     <span className="text-white text-xs font-bold pointer-events-none">{t('room.randomAvatar' as Parameters<typeof t>[0])}</span>
                   </div>
@@ -293,13 +293,13 @@ export default function ManageRoomsPage() {
                       maxLength={10}
                       value={editMemberName}
                       onChange={(e) => setEditMemberName(e.target.value)}
-                      className="w-full rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="w-full rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
                   
                   <button
                     onClick={handleSaveMember}
-                    className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-bold transition shadow-sm"
+                    className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-bold transition shadow-sm"
                   >
                     {t('room.save' as Parameters<typeof t>[0])}
                   </button>

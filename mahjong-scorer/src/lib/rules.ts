@@ -13,7 +13,7 @@ export const PRESETS: Record<string, RuleConfig> = {
     mode: '4-player',
     startPoints: 25000,
     returnPoints: 30000,
-    uma: [50, 10, -10, -50],
+    uma: [30, 10, -10, -30],
     tiebreakRule: 'split',
   },
   majsoul: {

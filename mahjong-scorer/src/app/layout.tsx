@@ -14,7 +14,7 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: '麻雀スコアラー | Mahjong Scorer',
+  title: 'デジタル点棒：AI麻雀スコア帳 | Digital Tenbou',
   description: 'オフライン麻雀の戦績管理ツール - Offline Riichi Mahjong Score Tracker',
   manifest: '/manifest.json',
   appleWebApp: {

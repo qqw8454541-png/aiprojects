@@ -1,6 +1,6 @@
 {
-  "name": "麻雀スコアラー | Mahjong Scorer",
-  "short_name": "MJ Scorer",
+  "name": "デジタル点棒：AI麻雀スコア帳 | Digital Tenbou",
+  "short_name": "デジタル点棒",
   "description": "オフライン麻雀の戦績管理ツール",
   "start_url": "/",
   "display": "standalone",

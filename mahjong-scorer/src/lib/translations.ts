@@ -1,7 +1,7 @@
 export const translations = {
   ja: {
     // Common
-    'app.title': '麻雀スコアラー',
+    'app.title': 'デジタル点棒：AI麻雀スコア帳',
     'app.subtitle': 'オフライン麻雀の戦績管理ツール',
     'common.back': '戻る',
     'common.next': '次へ',
@@ -171,10 +171,11 @@ export const translations = {
     'history.session': '対局',
     'history.hanchan': '半荘',
     'history.totalPt': '累計PT',
+    'history.roundDetails': '各局詳細',
   },
   zh: {
     // Common
-    'app.title': '麻将计分器',
+    'app.title': '电子点棒：AI日麻计分账本',
     'app.subtitle': '线下日麻战绩管理工具',
     'common.back': '返回',
     'common.next': '下一人',
@@ -344,10 +345,11 @@ export const translations = {
     'history.session': '对局',
     'history.hanchan': '半庄',
     'history.totalPt': '累计PT',
+    'history.roundDetails': '各局详情',
   },
   en: {
     // Common
-    'app.title': 'Mahjong Scorer',
+    'app.title': 'Digital Tenbou: AI Scorepad',
     'app.subtitle': 'Offline Riichi Mahjong Score Tracker',
     'common.back': 'Back',
     'common.next': 'Next',
@@ -517,6 +519,7 @@ export const translations = {
     'history.session': 'Session',
     'history.hanchan': 'Hanchan',
     'history.totalPt': 'Total PT',
+    'history.roundDetails': 'Round Details',
   },
 } as const;
 

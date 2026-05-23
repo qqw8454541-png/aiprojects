@@ -91,7 +91,7 @@ export default function SeatPicker({
                 onAssignSeat(seat.wind, e.target.value || null)
               }
               className="w-full rounded-lg bg-white dark:bg-black/40 border border-zinc-200 dark:border-zinc-600 text-zinc-900 dark:text-white px-3 py-2
-                         text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm
+                         text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm
                          appearance-none cursor-pointer"
             >
               <option value="">{t('room.vacant')}</option>
@@ -105,7 +105,7 @@ export default function SeatPicker({
             {/* Current player badge */}
             {playerName && (
               <div className="mt-2 text-center">
-                <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
                   {playerName}
                 </span>
               </div>

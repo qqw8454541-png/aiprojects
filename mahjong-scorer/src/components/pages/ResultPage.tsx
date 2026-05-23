@@ -116,8 +116,8 @@ export default function ResultPage() {
       <div className="mt-6 space-y-3 pb-8 safe-area-pb">
         <button
           onClick={() => startNewRound()}
-          className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 text-white text-base font-bold
-                     hover:from-amber-500 hover:to-orange-500 active:scale-[0.98] transition-all"
+          className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-base font-bold
+                     hover:from-emerald-500 hover:to-teal-500 active:scale-[0.98] transition-all"
         >
           {t('result.nextRound')}
         </button>

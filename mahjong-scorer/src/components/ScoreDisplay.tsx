@@ -77,7 +77,7 @@ export default function ScoreDisplay({
       className={`
         relative rounded-xl border-2 p-3 transition-all
         ${WIND_COLORS[wind]}
-        ${isActive ? 'ring-2 ring-amber-400 scale-[1.02]' : 'opacity-80'}
+        ${isActive ? 'ring-2 ring-emerald-400 scale-[1.02]' : 'opacity-80'}
       `}
     >
       {/* Wind badge */}
@@ -86,7 +86,7 @@ export default function ScoreDisplay({
           {windLabel}
         </span>
         {isAutoCalc && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-medium">
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-medium">
             {t('score.autoCalc')}
           </span>
         )}

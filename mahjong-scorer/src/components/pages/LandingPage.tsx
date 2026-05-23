@@ -22,26 +22,20 @@ export default function LandingPage() {
   }, [deviceId]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-dvh px-6 page-enter">
+    <div className="flex flex-col items-center justify-center min-h-dvh px-6 page-enter relative overflow-hidden">
+      {/* Subtle green tint matching the new icon */}
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/10 via-transparent to-zinc-950/20 pointer-events-none z-0 dark:from-emerald-950/30" />
 
-      <div className="text-center mb-12">
-        <div className="relative w-32 h-32 mx-auto mb-6">
-          <svg viewBox="0 0 120 120" className="w-full h-full animate-[float_4s_ease-in-out_infinite] filter drop-shadow-xl relative z-10" xmlns="http://www.w3.org/2000/svg">
-            <g transform="translate(10, 85) rotate(-15)">
-              <rect x="0" y="0" width="100" height="12" rx="6" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1.5"/>
-              <circle cx="50" cy="6" r="4" fill="#ef4444"/>
-              <circle cx="20" cy="6" r="2" fill="#1e293b"/>
-              <circle cx="80" cy="6" r="2" fill="#1e293b"/>
-            </g>
-            <g transform="translate(35, 10) rotate(8)">
-              <rect x="0" y="4" width="50" height="70" rx="6" fill="#cbd5e1" />
-              <rect x="-4" y="0" width="50" height="70" rx="6" fill="#fcfcfc" stroke="#e2e8f0" strokeWidth="2"/>
-              <text x="21" y="48" fontFamily="sans-serif" fontWeight="900" fontSize="38" fill="#ef4444" textAnchor="middle">中</text>
-            </g>
-          </svg>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-amber-500/20 rounded-full blur-xl z-0"/>
+      <div className="text-center mb-12 relative z-10 w-full">
+        <div className="relative w-32 h-32 mx-auto mb-6 animate-[float_4s_ease-in-out_infinite]">
+          <img 
+            src="/icon.png" 
+            alt="App Icon" 
+            className="w-full h-full object-contain drop-shadow-2xl relative z-10"
+          />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 bg-emerald-600/30 rounded-full blur-2xl z-0"/>
         </div>
-        <h1 className="text-3xl font-black tracking-tight bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-black tracking-tight bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
           {t('app.title')}
         </h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">{t('app.subtitle')}</p>
@@ -50,9 +44,9 @@ export default function LandingPage() {
       <div className="w-full max-w-xs space-y-4">
         <button
           onClick={() => setPage('personal-menu')}
-          className="w-full py-5 rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold
-                     hover:from-amber-500 hover:to-orange-500 active:scale-[0.98] transition-all
-                     shadow-lg shadow-amber-900/30 flex flex-col items-center gap-1"
+          className="w-full py-5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold
+                     hover:from-emerald-500 hover:to-teal-500 active:scale-[0.98] transition-all
+                     shadow-lg shadow-emerald-900/30 flex flex-col items-center gap-1"
         >
           <span className="text-lg">🀄 {t('landing.personalMode')}</span>
           <span className="text-xs font-normal opacity-75">{t('landing.personalModeDesc')}</span>

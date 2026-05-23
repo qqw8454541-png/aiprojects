@@ -45,8 +45,8 @@ export default function RulePresets({ onSelect, defaultRules, submitLabel, disab
   });
   const [customStart, setCustomStart] = useState(defaultRules?.startPoints ?? 25000);
   const [customReturn, setCustomReturn] = useState(defaultRules?.returnPoints ?? 30000);
-  const [customUma, setCustomUma] = useState<number[]>(
-    defaultRules?.uma ?? [15, 5, -5, -15]
+  const [customUma, setCustomUma] = useState<string[]>(
+    (defaultRules?.uma ?? [15, 5, -5, -15]).map(String)
   );
   const [customTiebreakRule, setCustomTiebreakRule] = useState<'seat_priority' | 'split'>(
     defaultRules?.tiebreakRule ?? 'seat_priority'
@@ -77,12 +77,12 @@ export default function RulePresets({ onSelect, defaultRules, submitLabel, disab
     setMode(newMode);
     setActivePreset(newMode === '3-player' ? 'sanmaMajsoul' : 'mLeague');
     setIsCustom(false);
-    setCustomUma(newMode === '3-player' ? [15, 0, -15] : [15, 5, -5, -15]);
+    setCustomUma(newMode === '3-player' ? ['15', '0', '-15'] : ['15', '5', '-5', '-15']);
   }
 
   function handleConfirm() {
     if (isCustom) {
-      onSelect(createCustomRule(customStart, customReturn, customUma.slice(0, mode === '3-player' ? 3 : 4), mode, customTiebreakRule));
+      onSelect(createCustomRule(customStart, customReturn, customUma.map(x => Number(x) || 0).slice(0, mode === '3-player' ? 3 : 4), mode, customTiebreakRule));
     } else if (activePreset) {
       onSelect(PRESETS[activePreset]);
     }
@@ -132,7 +132,7 @@ export default function RulePresets({ onSelect, defaultRules, submitLabel, disab
                 rounded-xl border p-3 text-center transition-all shadow-sm
                 ${
                   activePreset === key
-                    ? 'border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-500/10 ring-1 ring-amber-400/50 dark:ring-amber-500/50'
+                    ? 'border-emerald-400 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-400/50 dark:ring-emerald-500/50'
                     : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-500'
                 }
               `}
@@ -155,7 +155,7 @@ export default function RulePresets({ onSelect, defaultRules, submitLabel, disab
           w-full rounded-xl border p-3 text-sm font-medium transition-all shadow-sm
           ${
             isCustom
-              ? 'border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300'
+              ? 'border-emerald-400 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
               : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-500'
           }
         `}
@@ -202,16 +202,33 @@ export default function RulePresets({ onSelect, defaultRules, submitLabel, disab
                     <div className="text-[10px] text-zinc-500 text-center mb-1">
                       {t(`create.uma${(i + 1) as 1 | 2 | 3 | 4}`)}
                     </div>
-                    <input
-                      type="number"
-                      value={customUma[i] || 0}
-                      onChange={(e) => {
-                        const newUma = [...customUma];
-                        newUma[i] = Number(e.target.value);
-                        setCustomUma(newUma);
-                      }}
-                      className="w-full rounded-lg bg-white dark:bg-black/40 border border-zinc-200 dark:border-zinc-600 text-zinc-900 dark:text-white px-2 py-1.5 text-sm text-center shadow-sm"
-                    />
+                    <div className="relative flex items-center">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={customUma[i]}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9-]/g, '').replace(/(?!^)-/g, '');
+                          const newUma = [...customUma];
+                          newUma[i] = val;
+                          setCustomUma(newUma);
+                        }}
+                        className="w-full rounded-lg bg-white dark:bg-black/40 border border-zinc-200 dark:border-zinc-600 text-zinc-900 dark:text-white pl-2 pr-6 py-1.5 text-sm text-center shadow-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newUma = [...customUma];
+                          const current = Number(newUma[i]) || 0;
+                          newUma[i] = String(current * -1);
+                          setCustomUma(newUma);
+                        }}
+                        className="absolute right-0 top-0 bottom-0 px-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 flex items-center justify-center active:scale-95 transition-transform"
+                        tabIndex={-1}
+                      >
+                        ±
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -303,7 +320,7 @@ export default function RulePresets({ onSelect, defaultRules, submitLabel, disab
           w-full rounded-xl py-3.5 text-base font-bold transition-all shadow-sm
           ${
             activePreset || isCustom
-              ? 'bg-gradient-to-r from-amber-500 to-orange-500 dark:from-amber-600 dark:to-orange-600 text-white hover:brightness-110 active:scale-[0.98]'
+              ? 'bg-gradient-to-r from-emerald-500 to-teal-500 dark:from-emerald-600 dark:to-teal-600 text-white hover:brightness-110 active:scale-[0.98]'
               : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 cursor-not-allowed'
           }
         `}

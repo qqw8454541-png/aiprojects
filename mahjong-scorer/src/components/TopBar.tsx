@@ -74,7 +74,7 @@ export default function TopBar() {
       Title = isEditingName ? (
         <input
           autoFocus
-          className="text-lg font-bold bg-transparent border-b-2 border-amber-500 outline-none text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 w-32 md:w-48"
+          className="text-lg font-bold bg-transparent border-b-2 border-emerald-500 outline-none text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 w-32 md:w-48"
           value={tempName}
           onChange={(e) => setTempName(e.target.value)}
           onBlur={() => {
@@ -91,17 +91,17 @@ export default function TopBar() {
         />
       ) : (
         <h1 
-          className="text-lg font-bold flex items-center gap-1.5 cursor-pointer text-zinc-900 dark:text-zinc-100 hover:text-amber-500 dark:hover:text-amber-400 transition-colors"
+          className="text-lg font-bold flex items-center gap-1.5 cursor-pointer text-zinc-900 dark:text-zinc-100 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors"
           onClick={() => {
             setTempName(roomName || '');
             setIsEditingName(true);
           }}
         >
-          {roomName ? roomName : t('room.title')} <span className="opacity-40 text-xs text-amber-500">✏️</span>
+          {roomName ? roomName : t('room.title')} <span className="opacity-40 text-xs text-emerald-500">✏️</span>
         </h1>
       );
       if (roomCode) {
-        ExtraInfo = <span className="text-xs font-mono px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">{roomCode.toUpperCase()}</span>;
+        ExtraInfo = <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400">{roomCode.toUpperCase()}</span>;
       }
     } else if (currentPage === 'score') {
       Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-[120px] sm:max-w-[200px]">{roomName ? roomName : t('score.title')}</h1>;
@@ -136,7 +136,7 @@ export default function TopBar() {
     <header 
       className={`fixed top-0 left-0 right-0 z-50 safe-area-pt transition-all duration-300
         ${isScrolled 
-          ? 'bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 shadow-sm py-2 px-4' 
+          ? 'glass-header border-b border-zinc-200 dark:border-zinc-800 shadow-sm py-2 px-4' 
           : 'bg-transparent border-transparent py-4 px-4'}
       `}
     >
@@ -155,14 +155,6 @@ export default function TopBar() {
             <option value="zh" className="bg-white dark:bg-zinc-900">🇨🇳 ZH</option>
             <option value="en" className="bg-white dark:bg-zinc-900">🇺🇸 EN</option>
           </select>
-
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="w-8 h-8 flex items-center justify-center rounded-full text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-            aria-label="Toggle theme"
-          >
-            {mounted ? (theme === 'dark' ? '🌙' : '☀️') : '🌓'}
-          </button>
         </div>
       </div>
     </header>

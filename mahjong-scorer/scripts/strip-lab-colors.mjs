@@ -9,6 +9,10 @@
  * 1. Remove lab() declarations when a hex fallback exists
  * 2. Remove @supports(color:lab(...)) blocks (the hex fallback is sufficient)
  * 3. Remove @supports(color:color-mix(in lab,...)) blocks
+ * 4. Remove @supports(color:color-mix(in oklab,...)) blocks
+ * 5. Remove @supports(color:color-mix(in srgb,...)) blocks
+ * 6. Strip inline color-mix() declarations when a hex/rgba fallback exists
+ * 7. Strip "in oklab" / "in lab" / "in srgb" from gradient interpolation
  *
  * Run after `next build`: node scripts/strip-lab-colors.mjs
  */
@@ -48,6 +52,18 @@ function stripLabColors(css) {
     ''
   );
 
+  // 2b. Remove @supports (color:color-mix(in oklab,...)){...} blocks
+  modified = modified.replace(
+    /@supports\s*\(color:\s*color-mix\(in\s+oklab[^)]*\)\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g,
+    ''
+  );
+
+  // 2c. Remove @supports (color:color-mix(in srgb,...)){...} blocks
+  modified = modified.replace(
+    /@supports\s*\(color:\s*color-mix\(in\s+srgb[^)]*\)\)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g,
+    ''
+  );
+
   // 3. Remove standalone lab() declarations when preceded by hex
   //    Pattern: property: #hexval; property: lab(...)
   modified = modified.replace(
@@ -62,11 +78,21 @@ function stripLabColors(css) {
     '$1#$2'
   );
 
-  // 5. Strip "in oklab" and "in lab" from gradient interpolation.
+  // 5. Clean up inline color-mix() declarations that have hex/rgba siblings
+  //    property:#hex;property:color-mix(in oklab,...) → keep only the hex
+  const colorProps = 'background-color|color|border-color|outline-color|fill|stroke|box-shadow|text-decoration-color|accent-color|caret-color|background|border';
+  const colorMixInline = new RegExp(
+    `((?:${colorProps}):\\s*(?:#[0-9a-fA-F]{3,8}|rgba?\\([^)]+\\)))\\s*;\\s*(?:${colorProps}):\\s*color-mix\\([^;]+?\\)`,
+    'g'
+  );
+  modified = modified.replace(colorMixInline, '$1');
+
+  // 6. Strip "in oklab", "in lab", "in srgb" from gradient interpolation.
   //    Tailwind v4 emits e.g. "to right in oklab" which Android WebView
   //    doesn't support, causing the entire gradient to be ignored.
   modified = modified.replace(/\bin\s+oklab\b/g, '');
   modified = modified.replace(/\bin\s+lab\b/g, '');
+  modified = modified.replace(/\bin\s+srgb\b/g, '');
 
   return modified;
 }
@@ -87,7 +113,8 @@ for (const file of cssFiles) {
 }
 
 if (totalStripped > 0) {
-  console.log(`\n✅ Total: removed ${totalStripped} bytes of lab()/color-mix CSS for Android WebView compatibility`);
+  console.log(`\n✅ Total: removed ${totalStripped} bytes of lab()/color-mix/oklab CSS for Android WebView compatibility`);
 } else {
   console.log('ℹ No lab()/color-mix colors found to strip');
 }
+

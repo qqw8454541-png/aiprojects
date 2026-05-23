@@ -199,3 +199,68 @@ body {
   font-family: var(--font-sans);
   overscroll-behavior: none;
 }
+
+/* ===== Glass-effect utilities with Android WebView fallback ===== */
+
+/*
+ * Modal dark overlay — solid fallback, blur when supported.
+ * Replaces Tailwind's `bg-black/80 backdrop-blur-sm` which relies on
+ * color-mix() + backdrop-filter that older Android WebViews may ignore.
+ */
+.glass-overlay {
+  background: rgba(0, 0, 0, 0.85);
+}
+@supports (backdrop-filter: blur(4px)) {
+  .glass-overlay {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
+/*
+ * Frosted-glass header / sticky bar.
+ * Replaces `bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md`.
+ */
+.glass-header {
+  background: rgba(255, 255, 255, 0.95);
+}
+.dark .glass-header {
+  background: rgba(24, 24, 27, 0.95);
+}
+@supports (backdrop-filter: blur(4px)) {
+  .glass-header {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .dark .glass-header {
+    background: rgba(24, 24, 27, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+/*
+ * Frosted-glass secondary (lighter blur, for sticky sub-headers).
+ * Replaces `bg-white/90 dark:bg-zinc-900/90 backdrop-blur`.
+ */
+.glass-header-light {
+  background: rgba(255, 255, 255, 0.96);
+}
+.dark .glass-header-light {
+  background: rgba(24, 24, 27, 0.96);
+}
+@supports (backdrop-filter: blur(4px)) {
+  .glass-header-light {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .dark .glass-header-light {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
