@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>東樹合同会社 | イーストリーゴウドウガイシャ</title>
+    <meta name="description" content="東樹合同会社（イーストリー合同会社）は、アプリ開発・システム構築を通してお客様のITパートナーとなることを目指しています。">
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header>
+        <div class="container header-inner">
+            <a href="#" class="logo">
+                <img src="logo/logo.png" alt="東樹合同会社">
+            </a>
+            <button class="hamburger">☰</button>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#service">サービス</a></li>
+                    <li><a href="#about">私たちについて</a></li>
+                    <li><a href="#company">会社情報</a></li>
+                    <li><a href="#contact">お問い合わせ</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>東樹合同会社</h1>
+            <p>イーストリーゴウドウガイシャ</p>
+            <p style="font-size: 1rem; max-width: 500px; margin: 0 auto 30px auto;">
+                自然とテクノロジーの調和。<br>
+                私たちは、お客様のビジネスに寄り添うITパートナーとして、新しい価値を創造します。
+            </p>
+            <a href="#contact" class="btn">お問い合わせ</a>
+        </div>
+    </section>
+
+    <section id="service" class="container">
+        <h2 class="section-title">サービス</h2>
+        <div class="service-cards">
+            <div class="card">
+                <h3 style="margin-bottom: 20px; font-size: 1.5rem; color: var(--primary-color);">麻雀点数計算アプリ</h3>
+                <p>スムーズで直感的な操作性。リアルタイムでの点数計算や成績管理をサポートする、麻雀愛好家向けの専用アプリケーションです。</p>
+                <div class="store-buttons">
+                    <button class="store-btn" onclick="alert('準備中です')">App Store<br>(Coming Soon)</button>
+                    <button class="store-btn" onclick="alert('準備中です')">Google Play<br>(Coming Soon)</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" style="background: rgba(255,255,255,0.6);">
+        <div class="container">
+            <h2 class="section-title">私たちについて</h2>
+            <div class="about-text">
+                <p style="font-size: 1.5rem; font-weight: bold; margin-bottom: 30px; color: var(--primary-color);">
+                    もっと身近に、もっと気軽に、<br>そのアイデアを手元へ。
+                </p>
+                <p>
+                    私たちの目指す姿勢は、単なる委託のシステム会社という枠を超えた、顧客の「ITパートナー」。<br><br>
+                    短期的な納品がゴールではなく、顧客のシステム事業部を担う気持ちで長期的なお付き合いを見据えたサービスを提供します。<br><br>
+                    もっと身近に、もっと気軽に、ITソリューションのハードルを感じることなくアイデアを形にするサポートをいたします。
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section id="company" class="container">
+        <h2 class="section-title">会社情報</h2>
+        <table class="company-table">
+            <tr>
+                <th>社名</th>
+                <td>東樹合同会社（イーストリーゴウドウガイシャ）</td>
+            </tr>
+            <tr>
+                <th>代表者</th>
+                <td>龔培陽（きょう　ばいよう）（Gong Peiyang）</td>
+            </tr>
+            <tr>
+                <th>設立</th>
+                <td>2025年5月19日</td>
+            </tr>
+            <tr>
+                <th>所在地</th>
+                <td>〒131-0043<br>東京都墨田区立花４丁目２３－５司ビル４０１</td>
+            </tr>
+        </table>
+    </section>
+
+    <section id="contact" style="background: rgba(255,255,255,0.6);">
+        <div class="container">
+            <h2 class="section-title">お問い合わせ</h2>
+            <p style="text-align: center; margin-bottom: 40px;">サービスについて、その他ご相談など<br>お気軽にお問い合わせください。</p>
+            
+            <form id="contactForm" class="contact-form">
+                <div class="form-group">
+                    <label for="name">お名前<span>※</span></label>
+                    <input type="text" id="name" name="name" required placeholder="例：山田 太郎">
+                </div>
+                <div class="form-group">
+                    <label for="email">メールアドレス<span>※</span></label>
+                    <input type="email" id="email" name="email" required placeholder="例：info@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="tel">お電話番号</label>
+                    <input type="tel" id="tel" name="tel" placeholder="例：090-1234-5678">
+                </div>
+                <div class="form-group">
+                    <label for="message">お問い合わせ内容<span>※</span></label>
+                    <textarea id="message" name="message" rows="6" required placeholder="ご自由にご記入ください"></textarea>
+                </div>
+                <div style="text-align: center;">
+                    <button type="submit" class="btn">送信する</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="#">ホーム</a>
+                <a href="privacy.html">プライバシーポリシー</a>
+            </div>
+            <p>Copyright &copy; 2025 東樹合同会社 All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
