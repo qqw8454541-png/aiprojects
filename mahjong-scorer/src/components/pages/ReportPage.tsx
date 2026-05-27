@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { useGameStore } from '@/lib/store';
+import { useAuthStore } from '@/lib/auth-store';
+import { triggerGateAction } from '@/components/VipGate';
 import { toPng } from 'html-to-image';
 import type { Player } from '@/lib/store';
 import { getEvaluationsBatch, type PlayerEvalStats } from '@/lib/evaluations';
@@ -89,6 +91,11 @@ export default function ReportPage() {
     if (evalLockRef.current) return;
     if (isManualRefresh && evalCooldown > 0) return;
 
+    // ── VipGate: AI 功能需要登录 + 额度 ──────────────────
+    if (!triggerGateAction('ai')) {
+      return; // 被拦截（弹出了登录或购买弹窗）
+    }
+
     if (isManualRefresh) {
       localStorage.setItem('mahjong-evaluations-time', Date.now().toString());
       setEvalCooldown(10);
@@ -117,6 +124,8 @@ export default function ReportPage() {
           errorMsg = t('eval.noApiKey' as Parameters<typeof t>[0]);
         } else if (result.error === 'JSON_FORMAT_ERROR') {
           errorMsg = t('eval.formatError' as Parameters<typeof t>[0]);
+        } else if (result.error === 'CONNECTION_FAILED') {
+          errorMsg = t('eval.connectionError' as Parameters<typeof t>[0]);
         }
         alert(errorMsg);
         return; // Exit early without touching state or cache
@@ -129,7 +138,7 @@ export default function ReportPage() {
         roundCount: completedRounds.length
       }));
     } catch (e: any) {
-      console.error("fetchEvaluations catch:", e);
+      console.warn("fetchEvaluations catch:", e);
       alert(t('eval.apiError' as Parameters<typeof t>[0]) || "Error");
     } finally {
       setIsEvaluating(false);
@@ -358,7 +367,9 @@ export default function ReportPage() {
           ) : evalCooldown > 0 ? (
             `⏳ ${evalCooldown}s` 
           ) : (
-            `✨ ${t('room.regenerate' as Parameters<typeof t>[0])}`
+            <span className="flex items-center justify-center gap-2">
+              ✨ {t('room.regenerate' as Parameters<typeof t>[0])}
+            </span>
           )}
         </button>
 

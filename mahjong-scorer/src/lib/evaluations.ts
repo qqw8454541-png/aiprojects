@@ -1,6 +1,6 @@
 // This function runs client-side (no "use server") to support both web and static APK builds.
-// Requires NEXT_PUBLIC_GEMINI_API_KEY in .env.local / Vercel environment.
-import { LLM_CONFIG, type ScoringContext } from './llm.config';
+// Requires NEXT_PUBLIC_LLM_API_URL and NEXT_PUBLIC_LLM_API_SECRET in .env.local / Vercel environment.
+import type { ScoringContext } from './llm.config';
 
 export type Locale = 'zh' | 'ja' | 'en';
 
@@ -13,69 +13,42 @@ export interface PlayerEvalStats {
 }
 
 export async function getEvaluationsBatch(players: PlayerEvalStats[], locale: string, scoringCtx?: ScoringContext): Promise<{ data?: Record<string, string>, error?: string }> {
-  const lang = (locale === 'ja' || locale === 'zh') ? locale : 'en';
-  const langName = lang === 'zh' ? 'Simplified Chinese' : lang === 'ja' ? 'Japanese' : 'English';
-  
-  const apiKey = LLM_CONFIG.getApiKey();
-  if (!apiKey) {
-    return { error: 'NO_API_KEY' };
-  }
-
-  const prompt = LLM_CONFIG.buildPrompt(JSON.stringify(players, null, 2), langName, scoringCtx);
-  const apiUrl = LLM_CONFIG.buildApiUrl(LLM_CONFIG.MODEL_ID, apiKey);
+  // Use custom external API to prevent Gemini API Key exposure in APK
+  const apiUrl = process.env.NEXT_PUBLIC_LLM_API_URL || 'http://localhost:3002/api/evaluate';
+  const apiSecret = process.env.NEXT_PUBLIC_LLM_API_SECRET || 'dev-secret-key-123';
 
   try {
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiSecret}`
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-          temperature: 1.2,
-          topP: 0.95,
-        }
+        players,
+        locale,
+        scoringCtx
       })
     });
 
     if (!response.ok) {
-      const text = await response.text();
-      console.error(`LLM API Error [${response.status}]:`, text);
       if (response.status === 429) {
         return { error: 'QUOTA_EXCEEDED' };
-      }
-      if (response.status === 404) {
-        console.error(`Model "${LLM_CONFIG.MODEL_ID}" not found. Check llm.config.ts MODEL_ID.`);
-        return { error: 'GENERAL_API_ERROR' };
       }
       return { error: 'GENERAL_API_ERROR' };
     }
 
-    const data = await response.json();
-    if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-      const resultText = data.candidates[0].content.parts[0].text;
-      
-      // Robust JSON extraction to handle models that ignore the "No markdown" instruction
-      const jsonMatch = resultText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        console.error("LLM output did not contain a valid JSON block:", resultText);
-        return { error: 'JSON_FORMAT_ERROR' };
-      }
-      
-      try {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return { data: parsed as Record<string, string> };
-      } catch (parseError) {
-        console.error("Failed to parse extracted JSON block:", jsonMatch[0], parseError);
-        return { error: 'JSON_FORMAT_ERROR' };
-      }
+    const json = await response.json();
+    if (json.data) {
+      return { data: json.data as Record<string, string> };
     }
+    
     return { error: 'GENERAL_API_ERROR' };
   } catch (error: any) {
-    console.error("Evaluation batch generation error:", error);
+    console.warn("Evaluation batch generation error:", error?.message || error);
+    if (error?.name === 'TypeError' || (error?.message && error.message.includes('fetch'))) {
+      return { error: 'CONNECTION_FAILED' };
+    }
     return { error: 'GENERAL_API_ERROR' };
   }
 }

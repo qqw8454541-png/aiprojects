@@ -15,6 +15,7 @@ import type { RuleConfig } from './rules';
 export interface DbSavedMember {
   id: string;
   device_id: string;
+  user_id?: string;
   name: string;
   avatar_seed: string;
   created_at: string;
@@ -23,6 +24,7 @@ export interface DbSavedMember {
 export interface DbSavedRoom {
   id: string;
   device_id: string;
+  user_id?: string;
   name: string;
   rules: RuleConfig;
   created_at: string;
@@ -33,6 +35,7 @@ export interface DbSavedRoom {
 export interface DbCompletedSession {
   id: string;
   device_id: string;
+  user_id?: string;
   saved_room_id: string | null;
   room_name: string;
   rounds: unknown[];
@@ -86,4 +89,11 @@ export interface IRepository {
   rooms: IRoomRepository;
   roomMembers: IRoomMemberRepository;
   sessions: ISessionRepository;
+  
+  /**
+   * 将当前设备的匿名数据绑定到已登录用户的账号
+   * @param deviceId 设备ID
+   * @param userId Supabase User ID
+   */
+  migrateGuestData?(deviceId: string, userId: string): Promise<void>;
 }

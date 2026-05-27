@@ -3,6 +3,8 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useI18n } from '@/lib/i18n';
 import { useGameStore } from '@/lib/store';
+import { useAuthStore } from '@/lib/auth-store';
+import { triggerGateAction } from '@/components/VipGate';
 import Avatar from '@/components/Avatar';
 import { safeRandomUUID } from '@/lib/utils';
 import { getRepository } from '@/lib/repo-factory';
@@ -12,6 +14,7 @@ import { hapticWarning } from '@/lib/haptics';
 export default function ManageRoomsPage() {
   const { t } = useI18n();
   const { deviceId, setPage, setViewingHistoryRoomId, loadSavedRoom } = useGameStore();
+  const { isPro: authIsPro } = useAuthStore();
   const [rooms, setRooms] = useState<DbSavedRoom[]>([]);
   const [members, setMembers] = useState<DbSavedMember[]>([]);
   const [activeTab, setActiveTab] = useState<'rooms' | 'members'>('rooms');
@@ -120,6 +123,8 @@ export default function ManageRoomsPage() {
             </button>
           </div>
 
+
+
           {activeTab === 'rooms' && (
             rooms.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
@@ -196,24 +201,29 @@ export default function ManageRoomsPage() {
 
       {activeTab === 'members' && (
         <div className="space-y-4">
-          <button
-            onClick={() => {
-              if (!deviceId) return;
-              const seed = Math.random().toString(36).substring(2, 10);
-              setEditingMember({
-                id: safeRandomUUID(),
-                device_id: deviceId,
-                name: '',
-                avatar_seed: seed,
-                created_at: new Date().toISOString()
-              });
-              setEditMemberName('');
-              setEditMemberAvatar(seed);
-            }}
-            className="w-full py-4 rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 font-bold hover:border-emerald-500 hover:text-emerald-600 transition-colors flex items-center justify-center gap-2"
-          >
-            <span className="text-xl">+</span> {t('manage.newMember' as Parameters<typeof t>[0])}
-          </button>
+          {(() => {
+            return (
+              <button
+                onClick={() => {
+                  if (!deviceId) return;
+                  const seed = Math.random().toString(36).substring(2, 10);
+                  setEditingMember({
+                    id: safeRandomUUID(),
+                    device_id: deviceId,
+                    name: '',
+                    avatar_seed: seed,
+                    created_at: new Date().toISOString()
+                  });
+                  setEditMemberName('');
+                  setEditMemberAvatar(seed);
+                }}
+                className={`w-full py-4 rounded-xl border-2 border-dashed font-bold transition-colors flex items-center justify-center gap-2 border-zinc-300 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-emerald-500 hover:text-emerald-600`}
+              >
+                <span className="text-xl">+</span>
+                {t('manage.newMember' as Parameters<typeof t>[0])}
+              </button>
+            );
+          })()}
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {members.map(m => (

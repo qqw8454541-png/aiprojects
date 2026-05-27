@@ -55,6 +55,21 @@ function nowISO(): string {
   return new Date().toISOString();
 }
 
+/**
+ * 从 auth-store 动态获取当前已登录用户 ID。
+ * 使用延迟 require 避免模块初始化阶段的循环依赖。
+ * 未登录时返回 null。
+ */
+function getCurrentUserId(): string | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { useAuthStore } = require('./auth-store');
+    return useAuthStore.getState()?.user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // ────────────────────────── DB Connection ─────────────────────
 
 const DB_NAME = 'mahjong_scorer';
@@ -85,6 +100,7 @@ async function createTables(db: SQLiteDBConnection): Promise<void> {
     CREATE TABLE IF NOT EXISTS saved_members (
       id TEXT PRIMARY KEY,
       device_id TEXT NOT NULL,
+      user_id TEXT,
       name TEXT NOT NULL,
       avatar_seed TEXT NOT NULL DEFAULT '',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -93,6 +109,7 @@ async function createTables(db: SQLiteDBConnection): Promise<void> {
     CREATE TABLE IF NOT EXISTS saved_rooms (
       id TEXT PRIMARY KEY,
       device_id TEXT NOT NULL,
+      user_id TEXT,
       name TEXT NOT NULL,
       rules TEXT NOT NULL DEFAULT '{}',
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -111,6 +128,7 @@ async function createTables(db: SQLiteDBConnection): Promise<void> {
     CREATE TABLE IF NOT EXISTS completed_sessions (
       id TEXT PRIMARY KEY,
       device_id TEXT NOT NULL,
+      user_id TEXT,
       saved_room_id TEXT,
       room_name TEXT NOT NULL DEFAULT '',
       rounds TEXT NOT NULL DEFAULT '[]',
@@ -118,6 +136,12 @@ async function createTables(db: SQLiteDBConnection): Promise<void> {
       played_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
+  
+  // Upgrade schema if needed
+  try { await db.execute("ALTER TABLE saved_members ADD COLUMN user_id TEXT;"); } catch {}
+  try { await db.execute("ALTER TABLE saved_rooms ADD COLUMN user_id TEXT;"); } catch {}
+  try { await db.execute("ALTER TABLE completed_sessions ADD COLUMN user_id TEXT;"); } catch {}
+  
   // Enable foreign keys
   await db.execute(`PRAGMA foreign_keys = ON;`);
 }
@@ -138,10 +162,10 @@ class LocalMemberRepository implements IMemberRepository {
     const db = await getDb();
     const now = nowISO();
     await db.run(
-      `INSERT INTO saved_members (id, device_id, name, avatar_seed, created_at)
-       VALUES (?, ?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET name = excluded.name, avatar_seed = excluded.avatar_seed`,
-      [member.id, member.device_id, member.name, member.avatar_seed, now]
+      `INSERT INTO saved_members (id, device_id, user_id, name, avatar_seed, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET name = excluded.name, avatar_seed = excluded.avatar_seed, user_id = excluded.user_id`,
+      [member.id, member.device_id, member.user_id || null, member.name, member.avatar_seed, now]
     );
     const res = await db.query(`SELECT * FROM saved_members WHERE id = ?`, [member.id]);
     return (res.values ?? [])[0];
@@ -229,13 +253,14 @@ class LocalRoomRepository implements IRoomRepository {
     const db = await getDb();
     const id = uuid();
     const now = nowISO();
+    const userId = getCurrentUserId();
     await db.run(
-      `INSERT INTO saved_rooms (id, device_id, name, rules, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [id, deviceId, name, JSON.stringify(rules), now, now]
+      `INSERT INTO saved_rooms (id, device_id, user_id, name, rules, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [id, deviceId, userId, name, JSON.stringify(rules), now, now]
     );
     await this.roomMembers.set(id, memberIds);
-    return { id, device_id: deviceId, name, rules, created_at: now, updated_at: now, members: [] };
+    return { id, device_id: deviceId, user_id: userId ?? undefined, name, rules, created_at: now, updated_at: now, members: [] };
   }
 
   async update(
@@ -296,12 +321,14 @@ class LocalSessionRepository implements ISessionRepository {
     const db = await getDb();
     const id = uuid();
     const now = nowISO();
+    const userId = session.user_id ?? getCurrentUserId();
     await db.run(
-      `INSERT INTO completed_sessions (id, device_id, saved_room_id, room_name, rounds, players, played_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO completed_sessions (id, device_id, user_id, saved_room_id, room_name, rounds, players, played_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         session.device_id,
+        userId,
         session.saved_room_id ?? null,
         session.room_name,
         JSON.stringify(session.rounds),
@@ -312,6 +339,7 @@ class LocalSessionRepository implements ISessionRepository {
     return {
       id,
       device_id: session.device_id,
+      user_id: userId ?? undefined,
       saved_room_id: session.saved_room_id,
       room_name: session.room_name,
       rounds: session.rounds,
@@ -370,5 +398,27 @@ export class LocalRepository implements IRepository {
    */
   async initialize(): Promise<void> {
     await getDb();
+  }
+
+  async migrateGuestData(deviceId: string, userId: string): Promise<void> {
+    const db = await getDb();
+    
+    // Update members
+    await db.run(
+      `UPDATE saved_members SET user_id = ? WHERE device_id = ? AND (user_id IS NULL OR user_id = '')`,
+      [userId, deviceId]
+    );
+    
+    // Update rooms
+    await db.run(
+      `UPDATE saved_rooms SET user_id = ? WHERE device_id = ? AND (user_id IS NULL OR user_id = '')`,
+      [userId, deviceId]
+    );
+    
+    // Update completed sessions
+    await db.run(
+      `UPDATE completed_sessions SET user_id = ? WHERE device_id = ? AND (user_id IS NULL OR user_id = '')`,
+      [userId, deviceId]
+    );
   }
 }

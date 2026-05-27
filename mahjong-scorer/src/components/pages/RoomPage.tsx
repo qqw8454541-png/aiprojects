@@ -3,6 +3,8 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useI18n } from '@/lib/i18n';
 import { useGameStore } from '@/lib/store';
+import { useAuthStore } from '@/lib/auth-store';
+import { triggerGateAction } from '@/components/VipGate';
 import Avatar from '@/components/Avatar';
 import type { Player } from '@/lib/store';
 import { getRepository } from '@/lib/repo-factory';
@@ -351,7 +353,7 @@ export default function RoomPage() {
         <div className="mt-4 pb-0">
           <button
             onClick={() => setPage('report')}
-            className="w-full py-4 rounded-xl font-bold text-white bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-600 dark:to-indigo-600 hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-blue-500/20"
+            className="flex-1 bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-400 hover:to-fuchsia-400 active:scale-95 transition-all py-3 rounded-2xl font-bold text-white shadow-lg shadow-purple-900/20 flex items-center justify-center gap-2 w-full"
           >
             {t('result.generateReport' as Parameters<typeof t>[0])}
           </button>

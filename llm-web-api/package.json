@@ -1,0 +1,21 @@
+{
+  "name": "llm-web-api",
+  "version": "1.0.0",
+  "description": "Standalone Web API for LLM Evaluation",
+  "main": "index.js",
+  "scripts": {
+    "local": "npx vercel dev --listen 3002"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vercel/node": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.0"
+  }
+}

@@ -4,6 +4,7 @@ import { useTheme } from 'next-themes';
 import { useI18n } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { useGameStore } from '@/lib/store';
+import { useAuthStore } from '@/lib/auth-store';
 
 export default function TopBar() {
   const [mounted, setMounted] = useState(false);
@@ -13,6 +14,7 @@ export default function TopBar() {
     roomCode, currentPage, rounds, 
     setPage, resetRoom, roomName, setRoomName 
   } = useGameStore();
+  const { isLoggedIn: authLoggedIn, user: authUser, isPro: authIsPro, openAuthModal } = useAuthStore();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -146,6 +148,24 @@ export default function TopBar() {
         </div>
         
         <div className="flex items-center gap-1">
+          {/* User avatar / login button */}
+          {authLoggedIn ? (
+            <div className="relative">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                {(authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || authUser?.email || '?').charAt(0).toUpperCase()}
+              </div>
+              {authIsPro() && (
+                <span className="absolute -top-0.5 -right-0.5 text-[8px]">⭐</span>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => openAuthModal('general')}
+              className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors border border-zinc-200 dark:border-zinc-700"
+            >
+              <span className="text-sm">👤</span>
+            </button>
+          )}
           <select
             value={locale}
             onChange={(e) => setLocale(e.target.value as 'ja' | 'zh' | 'en')}

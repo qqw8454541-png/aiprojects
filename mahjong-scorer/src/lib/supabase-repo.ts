@@ -6,6 +6,7 @@
  */
 
 import { supabase } from './supabase';
+import { useAuthStore } from './auth-store';
 import type { RuleConfig } from './rules';
 import type {
   IRepository,
@@ -143,9 +144,10 @@ class SupabaseRoomRepository implements IRoomRepository {
     rules: RuleConfig,
     memberIds: string[]
   ): Promise<DbSavedRoom> {
+    const userId = useAuthStore.getState()?.user?.id ?? null;
     const { data, error } = await supabase
       .from('saved_rooms')
-      .insert({ device_id: deviceId, name, rules })
+      .insert({ device_id: deviceId, user_id: userId, name, rules })
       .select()
       .single();
     if (error) throw error;
@@ -189,9 +191,10 @@ class SupabaseSessionRepository implements ISessionRepository {
   async insert(
     session: Omit<DbCompletedSession, 'id' | 'played_at'>
   ): Promise<DbCompletedSession> {
+    const userId = session.user_id ?? useAuthStore.getState()?.user?.id ?? null;
     const { data, error } = await supabase
       .from('completed_sessions')
-      .insert(session)
+      .insert({ ...session, user_id: userId })
       .select()
       .single();
     if (error) throw error;
@@ -222,4 +225,20 @@ export class SupabaseRepository implements IRepository {
   rooms = new SupabaseRoomRepository();
   roomMembers = new SupabaseRoomMemberRepository();
   sessions = new SupabaseSessionRepository();
+
+  async migrateGuestData(deviceId: string, userId: string): Promise<void> {
+    // Note: Supabase RLS policies might prevent updating rows where user_id is null
+    // if the policy is just `user_id = auth.uid()`.
+    // However, since we are moving away from mock auth, the true migration 
+    // should happen by pulling SQLite data and pushing to Supabase.
+    // For web-only mode without SQLite, we update directly if RLS allows.
+    
+    const updateTasks = [
+      supabase.from('saved_members').update({ user_id: userId }).eq('device_id', deviceId).is('user_id', null),
+      supabase.from('saved_rooms').update({ user_id: userId }).eq('device_id', deviceId).is('user_id', null),
+      supabase.from('completed_sessions').update({ user_id: userId }).eq('device_id', deviceId).is('user_id', null)
+    ];
+    
+    await Promise.all(updateTasks);
+  }
 }
