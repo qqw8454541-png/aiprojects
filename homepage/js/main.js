@@ -23,4 +23,43 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Form Submit with Web3Forms (AJAX)
+  const contactForm = document.getElementById('contactForm');
+  if(contactForm) {
+    contactForm.addEventListener('submit', async (e) => {
+      e.preventDefault(); // 阻止默认的表单跳转行为
+      
+      const formData = new FormData(contactForm);
+      
+      const submitBtn = contactForm.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn.textContent;
+      submitBtn.textContent = '送信中...';
+      submitBtn.disabled = true;
+
+      try {
+        // 在后台悄悄发送数据，不引起页面跳转
+        const response = await fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          body: formData
+        });
+        
+        const data = await response.json();
+
+        if (data.success) {
+          // 自定义成功提示
+          alert('ありがとうございます。お問い合わせを送信しました。後ほど担当者よりご連絡いたします。');
+          contactForm.reset();
+        } else {
+          console.error('Error:', data);
+          alert('エラーが発生しました: ' + data.message);
+        }
+      } catch (error) {
+        console.error('Network Error:', error);
+        alert('通信エラーが発生しました。もう一度お試しください。');
+      } finally {
+        submitBtn.textContent = originalBtnText;
+        submitBtn.disabled = false;
+      }
+    });
+  }
 });
