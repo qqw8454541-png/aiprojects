@@ -97,7 +97,12 @@
             <h2 class="section-title">お問い合わせ</h2>
             <p style="text-align: center; margin-bottom: 40px;">サービスについて、その他ご相談など<br>お気軽にお問い合わせください。</p>
             
-            <form id="contactForm" class="contact-form">
+            <form action="https://api.web3forms.com/submit" method="POST" id="contactForm" class="contact-form">
+                <!-- Web3Forms Access Key -->
+                <input type="hidden" name="access_key" value="6b189c7a-76c8-40b3-9885-cfb5a75aa01a">
+                <!-- メール件名と送信元名の設定 -->
+                <input type="hidden" name="subject" value="ホームページからのお問い合わせ">
+                <input type="hidden" name="from_name" value="東樹合同会社 Webサイト">
                 <div class="form-group">
                     <label for="name">お名前<span>※</span></label>
                     <input type="text" id="name" name="name" required placeholder="例：山田 太郎">

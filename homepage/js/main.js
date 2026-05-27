@@ -23,13 +23,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Mock Form Submit
-  const contactForm = document.getElementById('contactForm');
-  if(contactForm) {
-    contactForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      alert('ありがとうございます。メッセージを受け付けました。（※現在システム準備中のため、実際の送信は行われません）');
-      contactForm.reset();
-    });
-  }
 });
