@@ -216,6 +216,13 @@ section {
 }
 
 /* About & Company */
+.about-highlight {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 30px;
+  color: var(--primary-color);
+}
+
 .about-text {
   max-width: 800px;
   margin: 0 auto;
@@ -314,6 +321,13 @@ footer {
 
 /* Responsive */
 @media (max-width: 768px) {
+  section {
+    padding: 50px 0;
+  }
+  .section-title {
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+  }
   .nav-links {
     position: absolute;
     top: 70px;
@@ -337,5 +351,24 @@ footer {
   }
   .hero h1 {
     font-size: 2rem;
+  }
+  .about-highlight {
+    font-size: 1.2rem;
+  }
+  .card {
+    min-width: 100%;
+    padding: 30px 20px;
+  }
+  .company-table th, .company-table td {
+    display: block;
+    width: 100%;
+  }
+  .company-table th {
+    border-bottom: none;
+    padding-bottom: 5px;
+  }
+  .company-table td {
+    padding-top: 5px;
+    padding-bottom: 20px;
   }
 }
