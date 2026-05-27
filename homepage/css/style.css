@@ -313,7 +313,8 @@ footer {
 
 .footer-links a {
   color: #a4c3b2;
-  margin: 0 10px;
+  margin: 0 10px 10px;
+  display: inline-block;
 }
 .footer-links a:hover {
   text-decoration: underline;
