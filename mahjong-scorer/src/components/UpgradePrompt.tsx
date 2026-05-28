@@ -6,6 +6,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import { PRICE_CONFIG } from '@/lib/billing.constants';
 import { useState } from 'react';
 import { hapticSuccess } from '@/lib/haptics';
+import { supabase } from '@/lib/supabase';
 
 export default function UpgradePrompt() {
   const { t, locale } = useI18n();
@@ -16,44 +17,50 @@ export default function UpgradePrompt() {
     isPro,
   } = useAuthStore();
   const [purchasing, setPurchasing] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const priceKey = (locale === 'ja' ? 'ja' : locale === 'zh' ? 'zh' : 'en') as keyof typeof PRICE_CONFIG.pro;
   const priceDisplay = PRICE_CONFIG.pro[priceKey];
 
   const handlePurchasePro = async () => {
     setPurchasing(true);
-    // TODO: Replace with real IAP / Stripe subscription flow
-    await new Promise((r) => setTimeout(r, 1000));
-    upgradeToPro();
-    hapticSuccess();
-    setPurchasing(false);
-    closeUpgradePrompt();
+    
+    try {
+      const { user } = useAuthStore.getState();
+      
+      if (!user) {
+        throw new Error('You must be logged in to upgrade.');
+      }
+      
+      // Update the database (RLS currently allows public update for testing)
+      const { error } = await supabase
+        .from('profiles')
+        .update({ tier: 'pro' })
+        .eq('user_id', user.id);
+        
+      if (error) throw error;
+      
+      // Update the local state
+      upgradeToPro();
+      hapticSuccess();
+      setIsSuccess(true);
+    } catch (e: any) {
+      console.error('Upgrade failed:', e);
+      // We still use alert here for simplicity since this is a temporary testing backdoor
+      alert(t('upgrade.error' as any));
+    } finally {
+      setPurchasing(false);
+    }
   };
 
   if (!showUpgradePrompt) return null;
 
-  const proFeatures: Record<string, string[]> = {
-    ja: [
-      '✨ AI戦報レビュー — 無制限',
-      '☁️ クラウド同期 & マルチデバイス',
-      '📊 高度な統計データ（今後追加）',
-      '🚀 優先サポート',
-    ],
-    zh: [
-      '✨ AI 战报点评 — 无限次',
-      '☁️ 云端同步 & 多设备漫游',
-      '📊 高级数据图表（后续扩展）',
-      '🚀 优先客服支持',
-    ],
-    en: [
-      '✨ AI Game Reviews — Unlimited',
-      '☁️ Cloud Sync & Multi-device',
-      '📊 Advanced Analytics (coming soon)',
-      '🚀 Priority Support',
-    ],
-  };
-
-  const features = proFeatures[locale] || proFeatures.en;
+  const features = [
+    t('upgrade.feat1' as any),
+    t('upgrade.feat2' as any),
+    t('upgrade.feat3' as any),
+    t('upgrade.feat4' as any),
+  ];
 
   return (
     <AnimatePresence>
@@ -71,7 +78,73 @@ export default function UpgradePrompt() {
           onClick={(e) => e.stopPropagation()}
           className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl w-full max-w-sm overflow-hidden shadow-xl"
         >
-          <div className="p-6">
+          {isSuccess ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: 'spring', damping: 15 }}
+              className="p-8 flex flex-col items-center justify-center text-center space-y-6"
+            >
+              <div className="relative mt-2">
+                <motion.div 
+                  initial={{ rotate: -180, scale: 0 }}
+                  animate={{ rotate: 0, scale: 1 }}
+                  transition={{ type: 'spring', delay: 0.1, damping: 12 }}
+                  className="w-24 h-24 bg-gradient-to-tr from-amber-400 to-yellow-300 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(251,191,36,0.6)]"
+                >
+                  <span className="text-5xl">👑</span>
+                </motion.div>
+                {/* Decorative sparkles */}
+                {[...Array(6)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ scale: 0, x: 0, y: 0 }}
+                    animate={{ 
+                      scale: [0, 1, 0],
+                      x: Math.cos(i * 60 * Math.PI / 180) * 70,
+                      y: Math.sin(i * 60 * Math.PI / 180) * 70,
+                    }}
+                    transition={{ duration: 1.5, delay: 0.3 + i * 0.1, repeat: Infinity, repeatDelay: 1 }}
+                    className="absolute top-1/2 left-1/2 w-2 h-2 bg-yellow-400 rounded-full"
+                    style={{ marginLeft: -4, marginTop: -4 }}
+                  />
+                ))}
+              </div>
+              
+              <div className="space-y-2">
+                <motion.h3 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="font-black text-2xl bg-gradient-to-br from-amber-500 to-orange-500 bg-clip-text text-transparent"
+                >
+                  {t('upgrade.successTitle' as any) || 'Welcome to Pro!'}
+                </motion.h3>
+                <motion.p 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="text-zinc-500 dark:text-zinc-400 text-sm font-medium"
+                >
+                  {t('upgrade.successDesc' as any) || 'All premium features are now unlocked.'}
+                </motion.p>
+              </div>
+
+              <motion.button
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+                onClick={() => {
+                  setIsSuccess(false);
+                  closeUpgradePrompt();
+                }}
+                className="w-full mt-4 py-4 rounded-2xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all active:scale-[0.97] shadow-lg"
+              >
+                {t('common.confirm' as any) || 'Start Exploring'}
+              </motion.button>
+            </motion.div>
+          ) : (
+            <div className="p-6">
             {/* Header */}
             <div className="text-center mb-5">
               <div className="text-5xl mb-3">⭐</div>
@@ -120,7 +193,8 @@ export default function UpgradePrompt() {
             >
               {t('common.close')}
             </button>
-          </div>
+            </div>
+          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>

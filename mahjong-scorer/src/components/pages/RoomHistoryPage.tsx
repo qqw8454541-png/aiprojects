@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { useGameStore } from '@/lib/store';
-import type { Player } from '@/lib/store';
 import { getRepository } from '@/lib/repo-factory';
 import type { DbCompletedSession } from '@/lib/repository';
 import Avatar from '@/components/Avatar';
@@ -41,15 +40,15 @@ export default function RoomHistoryPage() {
       ) : (
         <div className="space-y-3">
           {sessions.map((s, idx) => {
-            const rounds = s.rounds as import('@/lib/store').RoundResult[];
-            const players = s.players as import('@/lib/store').Player[];
+            const rounds = s.sessionRounds ?? [];
+            const players = s.sessionPlayers ?? [];
             const completedRounds = rounds.filter((r) => r.status === 'completed' && r.results);
             const ptMap: Record<string, number> = {};
             const nameMap: Record<string, string> = {};
             for (const r of completedRounds) {
               for (const res of (r.results ?? [])) {
-                ptMap[res.playerId] = (ptMap[res.playerId] ?? 0) + res.pt;
-                nameMap[res.playerId] = res.playerName;
+                ptMap[res.player_id] = (ptMap[res.player_id] ?? 0) + res.pt;
+                nameMap[res.player_id] = res.player_name;
               }
             }
             const isOpen = expanded.includes(s.id);
@@ -67,11 +66,12 @@ export default function RoomHistoryPage() {
                     <div className="font-medium text-xs text-zinc-500 mb-2">{t('history.totalPt')}</div>
                     <div className="space-y-1 mb-4">
                       {Object.entries(ptMap).sort(([, a], [, b]) => b - a).map(([pid, pt]) => {
-                        const name = players.find((p) => p.id === pid)?.name ?? nameMap[pid] ?? '?';
+                        const name = players.find((p) => p.player_id === pid)?.player_name ?? nameMap[pid] ?? '?';
+                        const avatarSeed = players.find((p) => p.player_id === pid)?.avatar_seed ?? pid;
                         return (
                           <div key={pid} className="flex justify-between text-sm items-center">
                             <span className="text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
-                              <Avatar seed={pid} size={20} />
+                              <Avatar seed={avatarSeed} size={20} />
                               {name} <span className="text-[10px] text-zinc-400 font-mono ml-0.5">#{pid.substring(0, 4)}</span>
                             </span>
                             <span className={`font-mono font-bold ${pt >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>{pt >= 0 ? '+' : ''}{pt.toFixed(1)}</span>
@@ -86,14 +86,15 @@ export default function RoomHistoryPage() {
                         <div className="space-y-3">
                           {completedRounds.map((r) => (
                             <div key={r.id} className="bg-zinc-50 dark:bg-zinc-800/30 rounded-lg p-2 text-xs">
-                              <div className="text-zinc-400 mb-1">{t('history.hanchan' as any)} {r.roundNumber}</div>
+                              <div className="text-zinc-400 mb-1">{t('history.hanchan' as any)} {r.round_number}</div>
                               <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                                 {r.results?.map(res => {
-                                  const name = players.find((p) => p.id === res.playerId)?.name ?? res.playerName;
+                                  const name = players.find((p) => p.player_id === res.player_id)?.player_name ?? res.player_name;
+                                  const avatarSeed = players.find((p) => p.player_id === res.player_id)?.avatar_seed ?? res.player_id;
                                   return (
-                                    <div key={res.playerId} className="flex justify-between items-center">
+                                    <div key={res.player_id} className="flex justify-between items-center">
                                       <span className="text-zinc-600 dark:text-zinc-400 truncate pr-2 flex items-center gap-1.5">
-                                        <Avatar seed={res.playerId} size={14} />
+                                        <Avatar seed={avatarSeed} size={14} />
                                         {name}
                                       </span>
                                       <span className={`font-mono ${res.pt >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>

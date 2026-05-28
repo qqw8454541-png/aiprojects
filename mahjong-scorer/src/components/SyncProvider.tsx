@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useGameStore } from '@/lib/store';
+import { useGameStore, getOrCreateDeviceId } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
 import { getPlatformType } from '@/lib/repo-factory';
 
@@ -23,6 +23,14 @@ const getDbState = (state: ReturnType<typeof useGameStore.getState>) => {
 export function SyncProvider({ children }: { children: React.ReactNode }) {
   const isUpdatingFromDb = useRef(false);
   
+  useEffect(() => {
+    // Ensure deviceId is populated in the store on the client side
+    const state = useGameStore.getState();
+    if (!state.deviceId) {
+      useGameStore.setState({ deviceId: getOrCreateDeviceId() });
+    }
+  }, []);
+
   useEffect(() => {
     // Native platforms use local SQLite — skip cloud sync
     if (getPlatformType() === 'native') return;

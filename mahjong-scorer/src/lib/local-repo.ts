@@ -18,6 +18,7 @@ import type {
   DbSavedMember,
   DbSavedRoom,
   DbCompletedSession,
+  DbSessionRound,
 } from './repository';
 
 // ── Runtime guard ─────────────────────────────────────────────
@@ -131,16 +132,55 @@ async function createTables(db: SQLiteDBConnection): Promise<void> {
       user_id TEXT,
       saved_room_id TEXT,
       room_name TEXT NOT NULL DEFAULT '',
-      rounds TEXT NOT NULL DEFAULT '[]',
-      players TEXT NOT NULL DEFAULT '[]',
       played_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS session_players (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL,
+      player_id TEXT NOT NULL,
+      player_name TEXT NOT NULL,
+      avatar_seed TEXT NOT NULL DEFAULT '',
+      saved_member_id TEXT,
+      seat_index INTEGER,
+      UNIQUE (session_id, player_id),
+      FOREIGN KEY (session_id) REFERENCES completed_sessions(id) ON DELETE CASCADE,
+      FOREIGN KEY (saved_member_id) REFERENCES saved_members(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS session_rounds (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL,
+      round_number INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'completed',
+      start_time INTEGER NOT NULL,
+      end_time INTEGER,
+      UNIQUE (session_id, round_number),
+      FOREIGN KEY (session_id) REFERENCES completed_sessions(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS round_player_results (
+      id TEXT PRIMARY KEY,
+      round_id TEXT NOT NULL,
+      player_id TEXT NOT NULL,
+      player_name TEXT NOT NULL,
+      wind TEXT NOT NULL,
+      raw_score INTEGER NOT NULL,
+      rank INTEGER NOT NULL,
+      pt REAL NOT NULL,
+      UNIQUE (round_id, player_id),
+      FOREIGN KEY (round_id) REFERENCES session_rounds(id) ON DELETE CASCADE
     );
   `);
   
-  // Upgrade schema if needed
+  // Upgrade schema if needed (for existing installs)
   try { await db.execute("ALTER TABLE saved_members ADD COLUMN user_id TEXT;"); } catch {}
   try { await db.execute("ALTER TABLE saved_rooms ADD COLUMN user_id TEXT;"); } catch {}
   try { await db.execute("ALTER TABLE completed_sessions ADD COLUMN user_id TEXT;"); } catch {}
+  
+  // Drop legacy JSONB columns if they still exist (migration from old schema)
+  try { await db.execute("ALTER TABLE completed_sessions DROP COLUMN rounds;"); } catch {}
+  try { await db.execute("ALTER TABLE completed_sessions DROP COLUMN players;"); } catch {}
   
   // Enable foreign keys
   await db.execute(`PRAGMA foreign_keys = ON;`);
@@ -308,11 +348,46 @@ class LocalSessionRepository implements ISessionRepository {
     sql += ` ORDER BY played_at DESC`;
 
     const res = await db.query(sql, params);
-    return (res.values ?? []).map((row) => ({
-      ...row,
-      rounds: typeof row.rounds === 'string' ? JSON.parse(row.rounds) : row.rounds,
-      players: typeof row.players === 'string' ? JSON.parse(row.players) : row.players,
-    }));
+    const sessions: DbCompletedSession[] = [];
+
+    for (const row of res.values ?? []) {
+      // Fetch session players
+      const playersRes = await db.query(
+        `SELECT * FROM session_players WHERE session_id = ? ORDER BY seat_index ASC`,
+        [row.id]
+      );
+
+      // Fetch session rounds
+      const roundsRes = await db.query(
+        `SELECT * FROM session_rounds WHERE session_id = ? ORDER BY round_number ASC`,
+        [row.id]
+      );
+
+      const sessionRounds: DbSessionRound[] = [];
+      for (const rd of roundsRes.values ?? []) {
+        const resultsRes = await db.query(
+          `SELECT * FROM round_player_results WHERE round_id = ? ORDER BY rank ASC`,
+          [rd.id]
+        );
+        sessionRounds.push({
+          ...rd,
+          start_time: Number(rd.start_time),
+          end_time: rd.end_time ? Number(rd.end_time) : undefined,
+          results: (resultsRes.values ?? []).map((r) => ({
+            ...r,
+            pt: Number(r.pt),
+          })),
+        });
+      }
+
+      sessions.push({
+        ...row,
+        sessionRounds,
+        sessionPlayers: playersRes.values ?? [],
+      });
+    }
+
+    return sessions;
   }
 
   async insert(
@@ -322,29 +397,57 @@ class LocalSessionRepository implements ISessionRepository {
     const id = uuid();
     const now = nowISO();
     const userId = session.user_id ?? getCurrentUserId();
+
+    // 1. Insert session base row
     await db.run(
-      `INSERT INTO completed_sessions (id, device_id, user_id, saved_room_id, room_name, rounds, players, played_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        id,
-        session.device_id,
-        userId,
-        session.saved_room_id ?? null,
-        session.room_name,
-        JSON.stringify(session.rounds),
-        JSON.stringify(session.players),
-        now,
-      ]
+      `INSERT INTO completed_sessions (id, device_id, user_id, saved_room_id, room_name, played_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [id, session.device_id, userId, session.saved_room_id ?? null, session.room_name, now]
     );
+
+    // 2. Insert session players
+    if (session.sessionPlayers && session.sessionPlayers.length > 0) {
+      for (let i = 0; i < session.sessionPlayers.length; i++) {
+        const p = session.sessionPlayers[i];
+        await db.run(
+          `INSERT INTO session_players (id, session_id, player_id, player_name, avatar_seed, saved_member_id, seat_index)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [uuid(), id, p.player_id, p.player_name, p.avatar_seed, p.saved_member_id || null, p.seat_index ?? i]
+        );
+      }
+    }
+
+    // 3. Insert session rounds + round player results
+    if (session.sessionRounds && session.sessionRounds.length > 0) {
+      for (const round of session.sessionRounds) {
+        const roundId = uuid();
+        await db.run(
+          `INSERT INTO session_rounds (id, session_id, round_number, status, start_time, end_time)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [roundId, id, round.round_number, round.status, round.start_time, round.end_time ?? null]
+        );
+
+        if (round.results && round.results.length > 0) {
+          for (const r of round.results) {
+            await db.run(
+              `INSERT INTO round_player_results (id, round_id, player_id, player_name, wind, raw_score, rank, pt)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+              [uuid(), roundId, r.player_id, r.player_name, r.wind, r.raw_score, r.rank, r.pt]
+            );
+          }
+        }
+      }
+    }
+
     return {
       id,
       device_id: session.device_id,
       user_id: userId ?? undefined,
       saved_room_id: session.saved_room_id,
       room_name: session.room_name,
-      rounds: session.rounds,
-      players: session.players,
       played_at: now,
+      sessionRounds: session.sessionRounds,
+      sessionPlayers: session.sessionPlayers,
     };
   }
 
@@ -353,6 +456,8 @@ class LocalSessionRepository implements ISessionRepository {
     updates: Partial<Omit<DbCompletedSession, 'id' | 'device_id' | 'played_at'>>
   ): Promise<void> {
     const db = await getDb();
+
+    // Update base fields
     const sets: string[] = [];
     const vals: unknown[] = [];
 
@@ -364,18 +469,49 @@ class LocalSessionRepository implements ISessionRepository {
       sets.push('room_name = ?');
       vals.push(updates.room_name);
     }
-    if (updates.rounds !== undefined) {
-      sets.push('rounds = ?');
-      vals.push(JSON.stringify(updates.rounds));
-    }
-    if (updates.players !== undefined) {
-      sets.push('players = ?');
-      vals.push(JSON.stringify(updates.players));
-    }
-    if (sets.length === 0) return;
 
-    vals.push(id);
-    await db.run(`UPDATE completed_sessions SET ${sets.join(', ')} WHERE id = ?`, vals);
+    if (sets.length > 0) {
+      vals.push(id);
+      await db.run(`UPDATE completed_sessions SET ${sets.join(', ')} WHERE id = ?`, vals);
+    }
+
+    // Replace session players if provided
+    if (updates.sessionPlayers !== undefined) {
+      await db.run(`DELETE FROM session_players WHERE session_id = ?`, [id]);
+      for (let i = 0; i < updates.sessionPlayers.length; i++) {
+        const p = updates.sessionPlayers[i];
+        await db.run(
+          `INSERT INTO session_players (id, session_id, player_id, player_name, avatar_seed, saved_member_id, seat_index)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [uuid(), id, p.player_id, p.player_name, p.avatar_seed, p.saved_member_id || null, p.seat_index ?? i]
+        );
+      }
+    }
+
+    // Replace session rounds if provided
+    if (updates.sessionRounds !== undefined) {
+      // Delete old rounds (cascade deletes round_player_results)
+      await db.run(`DELETE FROM session_rounds WHERE session_id = ?`, [id]);
+
+      for (const round of updates.sessionRounds) {
+        const roundId = uuid();
+        await db.run(
+          `INSERT INTO session_rounds (id, session_id, round_number, status, start_time, end_time)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [roundId, id, round.round_number, round.status, round.start_time, round.end_time ?? null]
+        );
+
+        if (round.results && round.results.length > 0) {
+          for (const r of round.results) {
+            await db.run(
+              `INSERT INTO round_player_results (id, round_id, player_id, player_name, wind, raw_score, rank, pt)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+              [uuid(), roundId, r.player_id, r.player_name, r.wind, r.raw_score, r.rank, r.pt]
+            );
+          }
+        }
+      }
+    }
   }
 
   async delete(id: string): Promise<void> {

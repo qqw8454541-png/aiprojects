@@ -13,16 +13,16 @@ export default function PersonalMenuPage() {
   const items = [
     ...(isResuming
       ? [
-          {
-            page: 'room' as const,
-            icon: '🎮',
-            label: 'room.continueMatch' as any,
-            desc: 'personal.newGameDesc' as any,
-            color: 'from-emerald-500 to-teal-500 dark:from-emerald-600 dark:to-teal-600',
-            shadow: 'shadow-emerald-900/20',
-            textColor: 'text-white',
-          },
-        ]
+        {
+          page: 'room' as const,
+          icon: '🎮',
+          label: 'room.continueMatch' as any,
+          desc: 'personal.newGameDesc' as any,
+          color: 'from-emerald-500 to-teal-500 dark:from-emerald-600 dark:to-teal-600',
+          shadow: 'shadow-emerald-900/20',
+          textColor: 'text-white',
+        },
+      ]
       : []),
     {
       page: 'create' as const,
@@ -89,11 +89,11 @@ export default function PersonalMenuPage() {
             {/* 已登录：显示用户信息 */}
             <div className="flex items-center gap-3 px-2 py-1">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-sm shadow">
-                {(user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || '?').charAt(0).toUpperCase()}
+                {(user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || user?.phone?.slice(-4) || '?').charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                  {user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || 'User'}
+                  {user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || (user?.phone ? `Phone User` : 'User')}
                 </div>
                 <div className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
                   {user?.email || user?.phone || user?.id?.slice(0, 8)}

@@ -132,10 +132,26 @@ export const useAuthStore = create<AuthState>()(
       // ── Init ────────────────────────────────────────────────
 
       initialize: () => {
+        const fetchTier = async (userId: string) => {
+          try {
+            const { data, error } = await supabase
+              .from('profiles')
+              .select('tier')
+              .eq('user_id', userId)
+              .single();
+            if (!error && data?.tier) {
+              set({ tier: data.tier as any });
+            }
+          } catch (e) {
+            console.error('Failed to fetch tier:', e);
+          }
+        };
+
         // Initial session check
         supabase.auth.getSession().then(async ({ data: { session } }) => {
           if (session?.user) {
             set({ user: session.user, isLoggedIn: true, showAuthModal: false });
+            await fetchTier(session.user.id);
             // Try migrate on initial load just in case it was missed
             try {
               const repo = await getRepository();
@@ -155,6 +171,7 @@ export const useAuthStore = create<AuthState>()(
         supabase.auth.onAuthStateChange(async (_event, session) => {
           if (session?.user) {
             set({ user: session.user, isLoggedIn: true, showAuthModal: false });
+            await fetchTier(session.user.id);
             // Migrate local data to the newly logged-in user
             try {
               const repo = await getRepository();
