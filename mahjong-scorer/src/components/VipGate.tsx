@@ -36,12 +36,12 @@ export function checkFeatureAccess(
   switch (feature) {
     case 'ai':
       if (!state.isLoggedIn) return { allowed: false, reason: 'not_logged_in' };
-      if (!state.isPro()) return { allowed: false, reason: 'need_pro' };
+      if (!state.isPro) return { allowed: false, reason: 'need_pro' };
       return { allowed: true, reason: 'ok' };
 
     case 'cloud_sync':
       if (!state.isLoggedIn) return { allowed: false, reason: 'not_logged_in' };
-      if (!state.isPro()) return { allowed: false, reason: 'need_pro' };
+      if (!state.isPro) return { allowed: false, reason: 'need_pro' };
       return { allowed: true, reason: 'ok' };
 
     default:

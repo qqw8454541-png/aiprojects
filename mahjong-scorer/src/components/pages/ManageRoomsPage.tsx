@@ -29,10 +29,21 @@ export default function ManageRoomsPage() {
 
   const reload = async () => {
     if (!deviceId) return;
-    const repo = await getRepository();
-    setRooms(await repo.rooms.list(deviceId));
-    setMembers(await repo.members.list(deviceId));
-    setLoading(false);
+    
+    // Safety timeout in case Supabase hangs (especially on mobile web wake-up)
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+      console.warn("ManageRooms: Loading timed out after 10s.");
+    }, 10000);
+
+    try {
+      const repo = await getRepository();
+      setRooms(await repo.rooms.list(deviceId));
+      setMembers(await repo.members.list(deviceId));
+    } finally {
+      clearTimeout(timeoutId);
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -73,6 +84,7 @@ export default function ManageRoomsPage() {
       device_id: editingMember.device_id,
       name: editMemberName.trim(),
       avatar_seed: editMemberAvatar,
+      updated_at: new Date().toISOString(),
     });
     setEditingMember(null);
     await reload();
@@ -93,12 +105,20 @@ export default function ManageRoomsPage() {
 
   const handleStart = async (roomId: string) => {
     setLoadingId(roomId);
+    let isTimeout = false;
+    const timeoutId = setTimeout(() => {
+      isTimeout = true;
+      setLoadingId(null);
+      alert('Network timeout while loading room. Please refresh the page and try again.');
+    }, 10000);
+
     try {
       await loadSavedRoom(roomId);
     } catch {
-      alert('Failed to load room');
+      if (!isTimeout) alert('Failed to load room');
     } finally {
-      setLoadingId(null);
+      clearTimeout(timeoutId);
+      if (!isTimeout) setLoadingId(null);
     }
   };
 
@@ -207,12 +227,14 @@ export default function ManageRoomsPage() {
                 onClick={() => {
                   if (!deviceId) return;
                   const seed = Math.random().toString(36).substring(2, 10);
+                  const now = new Date().toISOString();
                   setEditingMember({
                     id: safeRandomUUID(),
                     device_id: deviceId,
                     name: '',
                     avatar_seed: seed,
-                    created_at: new Date().toISOString()
+                    created_at: now,
+                    updated_at: now,
                   });
                   setEditMemberName('');
                   setEditMemberAvatar(seed);

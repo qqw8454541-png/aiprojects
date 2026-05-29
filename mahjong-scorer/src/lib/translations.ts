@@ -119,7 +119,8 @@ export const translations = {
     'result.generateReport': '戦績表を生成',
     'result.downloadImage': '画像を共有 / 保存',
     'result.reportTitle': '最終戦績報告',
-    'room.confirmEndTodayMatch': '本日の対局を終了し、キャッシュデータを消去しますか？',
+    'room.confirmEndTodayMatch': '対局を終了しますか？',
+    'room.confirmEndTodayMatchHint': '（同じメンバーで再開する場合は「ルームを管理」へ）',
     'room.endTodayMatch': '本日の対局を終了',
     'room.managePlayer': 'プレイヤー管理 (Edit Player)',
     'room.randomAvatar': 'ランダムアバター',
@@ -195,6 +196,7 @@ export const translations = {
     'auth.contextCloudSync': '☁️ ログインしてクラウド同期を有効にしましょう',
     'auth.contextLimitReached': '🔓 ログインして制限を解除しましょう',
     'auth.contextGeneral': 'アカウントにログイン',
+    'auth.sessionExpired': 'ログインの有効期限が切れました。自動的にログアウトしました。',
 
     // Upgrade / Billing
     'upgrade.proTab': 'Pro',
@@ -217,6 +219,18 @@ export const translations = {
     'upgrade.buyAI': 'AIパックを購入',
     'upgrade.aiCredits': 'AI利用回数',
     'upgrade.upgradeToProBtn': 'Proにアップグレード',
+
+    // Sync
+    'sync.doneTitle': '同期完了！',
+    'sync.doneDesc1': 'データは安全にクラウドへ保存されました',
+    'sync.doneDesc2': 'どのデバイスからでもアクセスできます',
+    'sync.doneBtn': 'はじめる',
+    'sync.errorTitle': '同期エラー',
+    'sync.errorDesc': 'ローカルデータは失われません',
+    'sync.errorDefault': '通信エラーが発生しました。ネットワーク接続を確認して再試行してください',
+    'sync.errorBtn': '後で試す',
+    'sync.syncingTitle': 'データ同期中...',
+    'sync.syncingDesc': 'ネットワーク接続を維持してください...',
   },
   zh: {
     // Common
@@ -338,7 +352,8 @@ export const translations = {
     'result.generateReport': '生成最终战报',
     'result.downloadImage': '分享 / 保存图片',
     'result.reportTitle': '最终战绩报告',
-    'room.confirmEndTodayMatch': '确定要结束今日的对战并清除缓存数据吗？',
+    'room.confirmEndTodayMatch': '确定结束对战吗？',
+    'room.confirmEndTodayMatchHint': '（原班人马重开可前往「管理房间」）',
     'room.endTodayMatch': '今日对战结束',
     'room.managePlayer': '管理玩家 (Edit Player)',
     'room.randomAvatar': '🔄 随机头像',
@@ -414,6 +429,7 @@ export const translations = {
     'auth.contextCloudSync': '☁️ 登录以启用云端同步，数据永不丢失',
     'auth.contextLimitReached': '🔓 登录以解除使用限制',
     'auth.contextGeneral': '登录账号',
+    'auth.sessionExpired': '登录有效期已过，已自动登出。',
 
     // Upgrade / Billing
     'upgrade.proTab': 'Pro',
@@ -436,6 +452,18 @@ export const translations = {
     'upgrade.buyAI': '购买 AI 分析包',
     'upgrade.aiCredits': 'AI 额度',
     'upgrade.upgradeToProBtn': '升级到 Pro',
+
+    // Sync
+    'sync.doneTitle': '同步完成！',
+    'sync.doneDesc1': '您的数据已安全上云',
+    'sync.doneDesc2': '现在可以在任何设备上访问',
+    'sync.doneBtn': '开始使用',
+    'sync.errorTitle': '同步失败',
+    'sync.errorDesc': '您的本地数据不会丢失',
+    'sync.errorDefault': '网络连接异常，请检查网络后重试',
+    'sync.errorBtn': '稍后再试',
+    'sync.syncingTitle': '数据同步中...',
+    'sync.syncingDesc': '请保持网络连接...',
   },
   en: {
     // Common
@@ -557,7 +585,8 @@ export const translations = {
     'result.generateReport': 'Generate Report',
     'result.downloadImage': 'Share / Save Image',
     'result.reportTitle': 'Match Report',
-    'room.confirmEndTodayMatch': 'Are you sure you want to end today\'s match and clear the cached data?',
+    'room.confirmEndTodayMatch': 'End match?',
+    'room.confirmEndTodayMatchHint': '(To play again with same members, go to "Manage Rooms")',
     'room.endTodayMatch': 'End Today\'s Match',
     'room.managePlayer': 'Manage Player (Edit Player)',
     'room.randomAvatar': 'Random Avatar',
@@ -633,6 +662,7 @@ export const translations = {
     'auth.contextCloudSync': '☁️ Sign in to enable cloud sync',
     'auth.contextLimitReached': '🔓 Sign in to unlock more features',
     'auth.contextGeneral': 'Sign in to your account',
+    'auth.sessionExpired': 'Login session expired. You have been logged out.',
 
     // Upgrade / Billing
     'upgrade.proTab': 'Pro',
@@ -655,6 +685,18 @@ export const translations = {
     'upgrade.buyAI': 'Buy AI Pack',
     'upgrade.aiCredits': 'AI Credits',
     'upgrade.upgradeToProBtn': 'Upgrade to Pro',
+
+    // Sync
+    'sync.doneTitle': 'Sync Complete!',
+    'sync.doneDesc1': 'Your data is safely in the cloud',
+    'sync.doneDesc2': 'You can now access it on any device',
+    'sync.doneBtn': 'Get Started',
+    'sync.errorTitle': 'Sync Failed',
+    'sync.errorDesc': 'Your local data is safe and won\'t be lost',
+    'sync.errorDefault': 'Network connection issue. Please check your network and try again.',
+    'sync.errorBtn': 'Try Again Later',
+    'sync.syncingTitle': 'Syncing Data...',
+    'sync.syncingDesc': 'Please keep your network connected...',
   },
 } as const;
 

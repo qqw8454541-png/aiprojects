@@ -7,6 +7,8 @@ import { PRICE_CONFIG } from '@/lib/billing.constants';
 import { useState } from 'react';
 import { hapticSuccess } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
+import { Capacitor } from '@capacitor/core';
+import { syncEngine } from '@/lib/sync-engine';
 
 export default function UpgradePrompt() {
   const { t, locale } = useI18n();
@@ -15,6 +17,7 @@ export default function UpgradePrompt() {
     closeUpgradePrompt,
     upgradeToPro,
     isPro,
+    setSyncState
   } = useAuthStore();
   const [purchasing, setPurchasing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -33,16 +36,34 @@ export default function UpgradePrompt() {
       }
       
       // Update the database (RLS currently allows public update for testing)
+      // Use upsert to ensure it works even if the profile row doesn't exist yet
       const { error } = await supabase
         .from('profiles')
-        .update({ tier: 'pro' })
-        .eq('user_id', user.id);
+        .upsert(
+          { 
+            user_id: user.id, 
+            tier: 'pro',
+            display_name: user.user_metadata?.name || user.user_metadata?.full_name || ''
+          },
+          { onConflict: 'user_id' }
+        );
         
       if (error) throw error;
       
       // Update the local state
       upgradeToPro();
       hapticSuccess();
+      
+      // Native sync trigger
+      if (Capacitor.getPlatform() !== 'web') {
+        setSyncState({ isSyncing: true, progress: null });
+        syncEngine.fullSync((progress) => setSyncState({ progress })).then((res) => {
+          if (!res.success) {
+            console.error('Sync failed:', res.error);
+          }
+        });
+      }
+
       setIsSuccess(true);
     } catch (e: any) {
       console.error('Upgrade failed:', e);
@@ -171,14 +192,14 @@ export default function UpgradePrompt() {
             {/* Purchase Button */}
             <button
               onClick={handlePurchasePro}
-              disabled={purchasing || isPro()}
+              disabled={purchasing || isPro}
               className={`w-full py-4 rounded-2xl font-bold text-base transition-all active:scale-[0.97] ${
-                isPro()
+                isPro
                   ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 cursor-not-allowed'
                   : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-900/20 hover:brightness-110'
               }`}
             >
-              {isPro()
+              {isPro
                 ? (t('upgrade.alreadyPro' as Parameters<typeof t>[0]) || '🎖️ Already Pro')
                 : purchasing
                   ? '...'

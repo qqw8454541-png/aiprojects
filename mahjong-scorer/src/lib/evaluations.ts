@@ -14,8 +14,13 @@ export interface PlayerEvalStats {
 
 export async function getEvaluationsBatch(players: PlayerEvalStats[], locale: string, scoringCtx?: ScoringContext): Promise<{ data?: Record<string, string>, error?: string }> {
   // Use custom external API to prevent Gemini API Key exposure in APK
-  const apiUrl = process.env.NEXT_PUBLIC_LLM_API_URL || 'http://localhost:3002/api/evaluate';
-  const apiSecret = process.env.NEXT_PUBLIC_LLM_API_SECRET || 'dev-secret-key-123';
+  const apiUrl = process.env.NEXT_PUBLIC_LLM_API_URL;
+  const apiSecret = process.env.NEXT_PUBLIC_LLM_API_SECRET;
+
+  if (!apiUrl || !apiSecret) {
+    console.error("Missing NEXT_PUBLIC_LLM_API_URL or NEXT_PUBLIC_LLM_API_SECRET in environment");
+    return { error: 'NO_API_KEY' };
+  }
 
   try {
     const response = await fetch(apiUrl, {

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useGameStore, getOrCreateDeviceId } from '@/lib/store';
+import { useAuthStore } from '@/lib/auth-store';
 import { supabase } from '@/lib/supabase';
 import { getPlatformType } from '@/lib/repo-factory';
 
@@ -29,6 +30,9 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     if (!state.deviceId) {
       useGameStore.setState({ deviceId: getOrCreateDeviceId() });
     }
+
+    // Initialize Auth Store (loads tier, registers device, sets up session listeners)
+    useAuthStore.getState().initialize();
   }, []);
 
   useEffect(() => {

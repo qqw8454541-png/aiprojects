@@ -12,8 +12,11 @@ import { persist } from 'zustand/middleware';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import type { UserTier } from './billing.constants';
-import { getRepository } from './repo-factory';
 import { useGameStore } from './store';
+import { claimDevice, registerDevice, collectDeviceInfo } from './device-info';
+import { Capacitor } from '@capacitor/core';
+import { syncEngine } from './sync-engine'; // We will create this
+import { getSavedLocale, translate } from './i18n';
 
 export type AuthProvider = 'google' | 'apple' | 'email' | 'phone';
 
@@ -35,8 +38,12 @@ interface AuthState {
   showUpgradePrompt: boolean;
   upgradePromptTab: 'pro' | 'ai';
 
+  // Sync State
+  syncState: { isSyncing: boolean; progress: any | null };
+  setSyncState: (state: Partial<{ isSyncing: boolean; progress: any | null }>) => void;
+
   // ── Computed ──────────────────────────────────────────────
-  isPro: () => boolean;
+  isPro: boolean;
 
   // ── Auth Modal ────────────────────────────────────────────
   openAuthModal: (context: AuthModalContext) => void;
@@ -71,9 +78,12 @@ export const useAuthStore = create<AuthState>()(
       showUpgradePrompt: false,
       upgradePromptTab: 'pro',
 
+      syncState: { isSyncing: false, progress: null },
+      setSyncState: (state) => set((prev) => ({ syncState: { ...prev.syncState, ...state } })),
+
       // ── Computed ────────────────────────────────────────────
 
-      isPro: () => get().tier === 'pro',
+      isPro: false,
 
       // ── Auth Modal ──────────────────────────────────────────
 
@@ -127,6 +137,7 @@ export const useAuthStore = create<AuthState>()(
       upgradeToPro: () =>
         set({
           tier: 'pro',
+          isPro: true,
         }),
 
       // ── Init ────────────────────────────────────────────────
@@ -139,8 +150,16 @@ export const useAuthStore = create<AuthState>()(
               .select('tier')
               .eq('user_id', userId)
               .single();
-            if (!error && data?.tier) {
-              set({ tier: data.tier as any });
+            if (error) {
+              if (error.code === 'PGRST116') {
+                // If no profile exists for this user, insert a default free profile
+                await supabase.from('profiles').insert({ user_id: userId, tier: 'free' });
+                set({ tier: 'free', isPro: false });
+              } else {
+                console.error('Failed to fetch tier:', error);
+              }
+            } else if (data?.tier) {
+              set({ tier: data.tier as any, isPro: data.tier === 'pro' });
             }
           } catch (e) {
             console.error('Failed to fetch tier:', e);
@@ -148,23 +167,41 @@ export const useAuthStore = create<AuthState>()(
         };
 
         // Initial session check
-        supabase.auth.getSession().then(async ({ data: { session } }) => {
+        supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+          if (error) {
+            console.error('Supabase auth session error:', error);
+            // If the refresh token is invalid (e.g. wiped local DB), sign out to clear it
+            if (error.name === 'AuthApiError') {
+              supabase.auth.signOut().catch(() => {});
+              if (typeof window !== 'undefined') {
+                alert(translate(getSavedLocale(), 'auth.sessionExpired' as any));
+              }
+            }
+            return;
+          }
+          
           if (session?.user) {
             set({ user: session.user, isLoggedIn: true, showAuthModal: false });
             await fetchTier(session.user.id);
-            // Try migrate on initial load just in case it was missed
+            // Try claim device and start sync if pro
             try {
-              const repo = await getRepository();
-              if (repo.migrateGuestData) {
-                const deviceId = useGameStore.getState().deviceId;
-                if (deviceId) {
-                  await repo.migrateGuestData(deviceId, session.user.id);
+              const deviceId = useGameStore.getState().deviceId;
+              if (deviceId) {
+                await claimDevice(deviceId, session.user.id);
+                const info = await collectDeviceInfo(deviceId);
+                await registerDevice(info, session.user.id);
+                
+                // If native platform and pro, start incremental sync
+                if (Capacitor.getPlatform() !== 'web' && get().isPro) {
+                  syncEngine.incrementalSync();
                 }
               }
             } catch (e) {
-              console.error('Data migration failed on auth change:', e);
+              console.error('Device claim/sync failed on load:', e);
             }
           }
+        }).catch(err => {
+          console.error('Unexpected error during auth initialization:', err);
         });
 
         // Listen for auth changes
@@ -172,17 +209,21 @@ export const useAuthStore = create<AuthState>()(
           if (session?.user) {
             set({ user: session.user, isLoggedIn: true, showAuthModal: false });
             await fetchTier(session.user.id);
-            // Migrate local data to the newly logged-in user
+            // Claim device and register on login
             try {
-              const repo = await getRepository();
-              if (repo.migrateGuestData) {
-                const deviceId = useGameStore.getState().deviceId;
-                if (deviceId) {
-                  await repo.migrateGuestData(deviceId, session.user.id);
+              const deviceId = useGameStore.getState().deviceId;
+              if (deviceId) {
+                await claimDevice(deviceId, session.user.id);
+                const info = await collectDeviceInfo(deviceId);
+                await registerDevice(info, session.user.id);
+                
+                // If native platform and pro, start incremental sync
+                if (Capacitor.getPlatform() !== 'web' && get().isPro) {
+                  syncEngine.incrementalSync();
                 }
               }
             } catch (e) {
-              console.error('Data migration failed on auth change:', e);
+              console.error('Device claim/sync failed on auth change:', e);
             }
           } else {
             set({ user: null, isLoggedIn: false });

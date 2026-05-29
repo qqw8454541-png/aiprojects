@@ -154,7 +154,7 @@ export default function TopBar() {
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-xs shadow-sm">
                 {(authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || authUser?.email || '?').charAt(0).toUpperCase()}
               </div>
-              {authIsPro() && (
+              {authIsPro && (
                 <span className="absolute -top-0.5 -right-0.5 text-[8px]">⭐</span>
               )}
             </div>

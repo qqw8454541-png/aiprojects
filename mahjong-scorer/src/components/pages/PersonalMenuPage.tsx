@@ -99,7 +99,7 @@ export default function PersonalMenuPage() {
                   {user?.email || user?.phone || user?.id?.slice(0, 8)}
                 </div>
               </div>
-              {isPro() && (
+              {isPro && (
                 <span className="text-xs font-bold px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
                   ⭐ Pro
                 </span>
@@ -107,8 +107,8 @@ export default function PersonalMenuPage() {
             </div>
 
 
-            {/* Pro 升级 / 已升级标识 */}
-            {!isPro() ? (
+            {/* Pro 升级 (仅在非 Pro 时显示) */}
+            {!isPro && (
               <button
                 onClick={() => openUpgradePrompt('pro')}
                 className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold
@@ -118,13 +118,6 @@ export default function PersonalMenuPage() {
                 <span className="text-xl">⭐</span>
                 <span>{t('upgrade.upgradeToProBtn' as Parameters<typeof t>[0]) || 'Upgrade to Pro'}</span>
               </button>
-            ) : (
-              <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/30">
-                <span>🎖️</span>
-                <span className="text-sm font-bold text-amber-700 dark:text-amber-400">
-                  {t('upgrade.alreadyPro' as Parameters<typeof t>[0]) || 'Pro Member'}
-                </span>
-              </div>
             )}
 
             {/* 登出 */}

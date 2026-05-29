@@ -391,9 +391,14 @@ export default function RoomPage() {
             >
               <div className="p-6 text-center">
                 <div className="text-4xl mb-3">⚠️</div>
-                <p className="text-zinc-800 dark:text-zinc-200 font-medium text-base mb-6">
-                  {t('room.confirmEndTodayMatch' as Parameters<typeof t>[0])}
-                </p>
+                <div className="mb-6">
+                  <p className="text-zinc-800 dark:text-zinc-200 font-bold text-lg mb-2">
+                    {t('room.confirmEndTodayMatch' as Parameters<typeof t>[0])}
+                  </p>
+                  <p className="text-zinc-500 dark:text-zinc-400 font-medium text-xs opacity-80 leading-relaxed">
+                    {t('room.confirmEndTodayMatchHint' as Parameters<typeof t>[0])}
+                  </p>
+                </div>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowEndConfirm(false)}

@@ -101,20 +101,21 @@ async function createTables(db: SQLiteDBConnection): Promise<void> {
     CREATE TABLE IF NOT EXISTS saved_members (
       id TEXT PRIMARY KEY,
       device_id TEXT NOT NULL,
-      user_id TEXT,
       name TEXT NOT NULL,
       avatar_seed TEXT NOT NULL DEFAULT '',
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      deleted_at TEXT
     );
 
     CREATE TABLE IF NOT EXISTS saved_rooms (
       id TEXT PRIMARY KEY,
       device_id TEXT NOT NULL,
-      user_id TEXT,
       name TEXT NOT NULL,
       rules TEXT NOT NULL DEFAULT '{}',
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      deleted_at TEXT
     );
 
     CREATE TABLE IF NOT EXISTS room_members (
@@ -129,7 +130,6 @@ async function createTables(db: SQLiteDBConnection): Promise<void> {
     CREATE TABLE IF NOT EXISTS completed_sessions (
       id TEXT PRIMARY KEY,
       device_id TEXT NOT NULL,
-      user_id TEXT,
       saved_room_id TEXT,
       room_name TEXT NOT NULL DEFAULT '',
       played_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -174,9 +174,9 @@ async function createTables(db: SQLiteDBConnection): Promise<void> {
   `);
   
   // Upgrade schema if needed (for existing installs)
-  try { await db.execute("ALTER TABLE saved_members ADD COLUMN user_id TEXT;"); } catch {}
-  try { await db.execute("ALTER TABLE saved_rooms ADD COLUMN user_id TEXT;"); } catch {}
-  try { await db.execute("ALTER TABLE completed_sessions ADD COLUMN user_id TEXT;"); } catch {}
+  try { await db.execute("ALTER TABLE saved_members ADD COLUMN updated_at TEXT DEFAULT (datetime('now'));"); } catch {}
+  try { await db.execute("ALTER TABLE saved_members ADD COLUMN deleted_at TEXT;"); } catch {}
+  try { await db.execute("ALTER TABLE saved_rooms ADD COLUMN deleted_at TEXT;"); } catch {}
   
   // Drop legacy JSONB columns if they still exist (migration from old schema)
   try { await db.execute("ALTER TABLE completed_sessions DROP COLUMN rounds;"); } catch {}
@@ -192,7 +192,7 @@ class LocalMemberRepository implements IMemberRepository {
   async list(deviceId: string): Promise<DbSavedMember[]> {
     const db = await getDb();
     const res = await db.query(
-      `SELECT * FROM saved_members WHERE device_id = ? AND avatar_seed != '__DELETED__' ORDER BY created_at DESC`,
+      `SELECT * FROM saved_members WHERE device_id = ? AND deleted_at IS NULL AND avatar_seed != '__DELETED__' ORDER BY created_at DESC`,
       [deviceId]
     );
     return res.values ?? [];
@@ -202,10 +202,10 @@ class LocalMemberRepository implements IMemberRepository {
     const db = await getDb();
     const now = nowISO();
     await db.run(
-      `INSERT INTO saved_members (id, device_id, user_id, name, avatar_seed, created_at)
+      `INSERT INTO saved_members (id, device_id, name, avatar_seed, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET name = excluded.name, avatar_seed = excluded.avatar_seed, user_id = excluded.user_id`,
-      [member.id, member.device_id, member.user_id || null, member.name, member.avatar_seed, now]
+       ON CONFLICT(id) DO UPDATE SET name = excluded.name, avatar_seed = excluded.avatar_seed, updated_at = excluded.updated_at`,
+      [member.id, member.device_id, member.name, member.avatar_seed, now, now]
     );
     const res = await db.query(`SELECT * FROM saved_members WHERE id = ?`, [member.id]);
     return (res.values ?? [])[0];
@@ -213,9 +213,10 @@ class LocalMemberRepository implements IMemberRepository {
 
   async delete(id: string): Promise<void> {
     const db = await getDb();
+    const now = nowISO();
     await db.run(
-      `UPDATE saved_members SET avatar_seed = '__DELETED__' WHERE id = ?`,
-      [id]
+      `UPDATE saved_members SET deleted_at = ?, updated_at = ? WHERE id = ?`,
+      [now, now, id]
     );
   }
 }
@@ -256,7 +257,7 @@ class LocalRoomRepository implements IRoomRepository {
   async list(deviceId: string): Promise<DbSavedRoom[]> {
     const db = await getDb();
     const res = await db.query(
-      `SELECT * FROM saved_rooms WHERE device_id = ? ORDER BY updated_at DESC`,
+      `SELECT * FROM saved_rooms WHERE device_id = ? AND deleted_at IS NULL ORDER BY updated_at DESC`,
       [deviceId]
     );
     const rooms: DbSavedRoom[] = [];
@@ -295,12 +296,12 @@ class LocalRoomRepository implements IRoomRepository {
     const now = nowISO();
     const userId = getCurrentUserId();
     await db.run(
-      `INSERT INTO saved_rooms (id, device_id, user_id, name, rules, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id, deviceId, userId, name, JSON.stringify(rules), now, now]
+      `INSERT INTO saved_rooms (id, device_id, name, rules, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [id, deviceId, name, JSON.stringify(rules), now, now]
     );
     await this.roomMembers.set(id, memberIds);
-    return { id, device_id: deviceId, user_id: userId ?? undefined, name, rules, created_at: now, updated_at: now, members: [] };
+    return { id, device_id: deviceId, name, rules, created_at: now, updated_at: now, members: [] };
   }
 
   async update(
@@ -328,8 +329,8 @@ class LocalRoomRepository implements IRoomRepository {
 
   async delete(id: string): Promise<void> {
     const db = await getDb();
-    // room_members will cascade
-    await db.run(`DELETE FROM saved_rooms WHERE id = ?`, [id]);
+    const now = nowISO();
+    await db.run(`UPDATE saved_rooms SET deleted_at = ?, updated_at = ? WHERE id = ?`, [now, now, id]);
   }
 }
 
@@ -396,13 +397,13 @@ class LocalSessionRepository implements ISessionRepository {
     const db = await getDb();
     const id = uuid();
     const now = nowISO();
-    const userId = session.user_id ?? getCurrentUserId();
+    const userId = getCurrentUserId();
 
     // 1. Insert session base row
     await db.run(
-      `INSERT INTO completed_sessions (id, device_id, user_id, saved_room_id, room_name, played_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [id, session.device_id, userId, session.saved_room_id ?? null, session.room_name, now]
+      `INSERT INTO completed_sessions (id, device_id, saved_room_id, room_name, played_at)
+       VALUES (?, ?, ?, ?, ?)`,
+      [id, session.device_id, session.saved_room_id ?? null, session.room_name, now]
     );
 
     // 2. Insert session players
@@ -442,7 +443,6 @@ class LocalSessionRepository implements ISessionRepository {
     return {
       id,
       device_id: session.device_id,
-      user_id: userId ?? undefined,
       saved_room_id: session.saved_room_id,
       room_name: session.room_name,
       played_at: now,
@@ -536,25 +536,67 @@ export class LocalRepository implements IRepository {
     await getDb();
   }
 
-  async migrateGuestData(deviceId: string, userId: string): Promise<void> {
+  async exportAllMembers(): Promise<DbSavedMember[]> {
     const db = await getDb();
+    const res = await db.query(`SELECT * FROM saved_members ORDER BY created_at ASC`);
+    return res.values ?? [];
+  }
+
+  async exportAllRooms(): Promise<DbSavedRoom[]> {
+    const db = await getDb();
+    const res = await db.query(`SELECT * FROM saved_rooms ORDER BY created_at ASC`);
+    const rooms: DbSavedRoom[] = [];
+    for (const row of res.values ?? []) {
+      const members = await this.roomMembers.listByRoom(row.id);
+      rooms.push({
+        ...row,
+        rules: typeof row.rules === 'string' ? JSON.parse(row.rules) : row.rules,
+        members,
+      });
+    }
+    return rooms;
+  }
+
+  async exportAllSessions(): Promise<DbCompletedSession[]> {
+    const db = await getDb();
+    const res = await db.query(`SELECT * FROM completed_sessions ORDER BY played_at ASC`);
+    const sessions: DbCompletedSession[] = [];
     
-    // Update members
-    await db.run(
-      `UPDATE saved_members SET user_id = ? WHERE device_id = ? AND (user_id IS NULL OR user_id = '')`,
-      [userId, deviceId]
-    );
-    
-    // Update rooms
-    await db.run(
-      `UPDATE saved_rooms SET user_id = ? WHERE device_id = ? AND (user_id IS NULL OR user_id = '')`,
-      [userId, deviceId]
-    );
-    
-    // Update completed sessions
-    await db.run(
-      `UPDATE completed_sessions SET user_id = ? WHERE device_id = ? AND (user_id IS NULL OR user_id = '')`,
-      [userId, deviceId]
-    );
+    for (const row of res.values ?? []) {
+      const playersRes = await db.query(
+        `SELECT * FROM session_players WHERE session_id = ? ORDER BY seat_index ASC`,
+        [row.id]
+      );
+
+      const roundsRes = await db.query(
+        `SELECT * FROM session_rounds WHERE session_id = ? ORDER BY round_number ASC`,
+        [row.id]
+      );
+
+      const sessionRounds: DbSessionRound[] = [];
+      for (const rd of roundsRes.values ?? []) {
+        const resultsRes = await db.query(
+          `SELECT * FROM round_player_results WHERE round_id = ? ORDER BY rank ASC`,
+          [rd.id]
+        );
+        sessionRounds.push({
+          ...rd,
+          start_time: Number(rd.start_time),
+          end_time: rd.end_time ? Number(rd.end_time) : undefined,
+          results: (resultsRes.values ?? []).map((r) => ({
+            ...r,
+            pt: Number(r.pt),
+          })),
+        });
+      }
+
+      sessions.push({
+        ...row,
+        sessionRounds,
+        sessionPlayers: playersRes.values ?? [],
+      });
+    }
+
+    return sessions;
   }
 }

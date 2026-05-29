@@ -7,6 +7,7 @@ import SwipeNavigation from '@/components/SwipeNavigation';
 import { SyncProvider } from '@/components/SyncProvider';
 import AuthModal from '@/components/AuthModal';
 import UpgradePrompt from '@/components/UpgradePrompt';
+import SyncScreen from '@/components/SyncScreen';
 import './globals.css';
 
 const notoSansJP = Noto_Sans_JP({
@@ -58,6 +59,7 @@ export default function RootLayout({
               <SwipeNavigation />
               <AuthModal />
               <UpgradePrompt />
+              <SyncScreen />
               {children}
             </SyncProvider>
           </I18nProvider>

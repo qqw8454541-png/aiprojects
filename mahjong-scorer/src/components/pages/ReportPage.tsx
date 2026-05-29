@@ -67,7 +67,7 @@ export default function ReportPage() {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(true);
   const [evaluations, setEvaluations] = useState<Record<string, string>>({});
-  const [isEvaluating, setIsEvaluating] = useState(true);
+  const [isEvaluating, setIsEvaluating] = useState(false);
   
   const evalLockRef = useRef(false);
   const [evalCooldown, setEvalCooldown] = useState(0);
@@ -154,18 +154,19 @@ export default function ReportPage() {
         // Only use cache if the round count matches (meaning no new rounds were played)
         if (parsed.roundCount === completedRounds.length && parsed.data) {
           setEvaluations(parsed.data);
-          setIsEvaluating(false);
           return;
         }
       } catch (e) {
         console.error("Failed to parse evaluation cache", e);
       }
     }
-    fetchEvaluations();
+    // No longer auto-fetching evaluations on load to save AI API costs
   }, [completedRounds.length]);
 
   useEffect(() => {
-    if (isEvaluating || Object.keys(evaluations).length === 0) return;
+    // We only wait for evaluation to finish if it's actively evaluating. 
+    // If it's not evaluating (even if evaluations are empty), we generate the image!
+    if (isEvaluating) return;
 
     let mounted = true;
     setIsGenerating(true);
