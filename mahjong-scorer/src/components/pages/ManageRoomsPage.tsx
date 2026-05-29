@@ -5,6 +5,7 @@ import { useI18n } from '@/lib/i18n';
 import { useGameStore } from '@/lib/store';
 import { useAuthStore } from '@/lib/auth-store';
 import { triggerGateAction } from '@/components/VipGate';
+import SwipeableItem from '@/components/SwipeableItem';
 import Avatar from '@/components/Avatar';
 import { safeRandomUUID } from '@/lib/utils';
 import { getRepository } from '@/lib/repo-factory';
@@ -90,9 +91,9 @@ export default function ManageRoomsPage() {
     await reload();
   };
 
-  const handleDeleteMember = async (id: string) => {
+  const handleDeleteMember = async (id: string, skipConfirm = false) => {
     hapticWarning();
-    if (!confirm(t('manage.deleteMemberConfirm' as Parameters<typeof t>[0]))) return;
+    if (!skipConfirm && !confirm(t('manage.deleteMemberConfirm' as Parameters<typeof t>[0]))) return;
     const repo = await getRepository();
     await repo.members.delete(id);
     await reload();
@@ -249,33 +250,16 @@ export default function ManageRoomsPage() {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {members.map(m => (
-              <div key={m.id} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 flex items-center justify-between shadow-sm">
-                <div className="flex items-center gap-3">
-                  <Avatar seed={m.avatar_seed} size={40} />
-                  <div>
-                    <div className="font-bold text-zinc-900 dark:text-zinc-100 text-base">{m.name}</div>
-                    <div className="text-[10px] text-zinc-400 font-mono">#{m.id.substring(0, 8)}</div>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => {
-                      setEditingMember(m);
-                      setEditMemberName(m.name);
-                      setEditMemberAvatar(m.avatar_seed);
-                    }}
-                    className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition shadow-sm"
-                  >
-                    ✏️
-                  </button>
-                  <button 
-                    onClick={() => handleDeleteMember(m.id)}
-                    className="p-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40 transition shadow-sm"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
+              <MemberItem
+                key={m.id}
+                member={m}
+                onEdit={() => {
+                  setEditingMember(m);
+                  setEditMemberName(m.name);
+                  setEditMemberAvatar(m.avatar_seed);
+                }}
+                onDelete={(skipConfirm) => handleDeleteMember(m.id, skipConfirm)}
+              />
             ))}
           </div>
         </div>
@@ -342,5 +326,42 @@ export default function ManageRoomsPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function MemberItem({ 
+  member, 
+  onEdit, 
+  onDelete 
+}: { 
+  member: DbSavedMember; 
+  onEdit: () => void; 
+  onDelete: (skipConfirm?: boolean) => void;
+}) {
+  return (
+    <SwipeableItem
+      onDelete={onDelete}
+      onEdit={onEdit}
+      className="bg-white dark:bg-zinc-900 p-4 flex items-center justify-between"
+    >
+      <div className="flex items-center gap-3 pointer-events-none">
+        <Avatar seed={member.avatar_seed} size={40} />
+        <div>
+          <div className="font-bold text-zinc-900 dark:text-zinc-100 text-base">{member.name}</div>
+          <div className="text-[10px] text-zinc-400 font-mono">#{member.id.substring(0, 8)}</div>
+        </div>
+      </div>
+      <div className="flex items-center text-zinc-300 dark:text-zinc-600 pointer-events-none gap-2">
+        <div className="flex flex-col items-end opacity-60">
+          <span className="text-[9px] uppercase font-bold">Hold Edit</span>
+          <span className="text-[9px] uppercase font-bold">&larr; Delete</span>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="1" />
+          <circle cx="12" cy="5" r="1" />
+          <circle cx="12" cy="19" r="1" />
+        </svg>
+      </div>
+    </SwipeableItem>
   );
 }

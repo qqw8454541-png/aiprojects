@@ -115,16 +115,23 @@ export default function RoomPage() {
             <div className="mt-3 mb-2">
               <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1.5 px-1">{t('room.historyMembers' as Parameters<typeof t>[0])}</p>
               <div className="flex flex-nowrap overflow-x-auto w-full gap-2 pb-2 scrollbar-hide">
-                {savedMembers.filter(m => !players.some(p => p.name === m.name)).map(m => (
-                  <button
-                    key={m.id}
-                    onClick={() => addSavedPlayer(m.id, m.name, m.avatar_seed)}
-                    className="flex shrink-0 items-center gap-1.5 p-1.5 pr-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-full border border-indigo-100 dark:border-indigo-800/30 hover:bg-indigo-100 dark:hover:bg-indigo-800/50 transition"
-                  >
-                    <Avatar seed={m.avatar_seed} size={24} />
-                    <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">{m.name}</span>
-                  </button>
-                ))}
+                <AnimatePresence mode="popLayout">
+                  {savedMembers.filter(m => !players.some(p => p.name === m.name)).map(m => (
+                    <motion.button
+                      layoutId={`player-anim-${m.id}`}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
+                      key={m.id}
+                      onClick={() => addSavedPlayer(m.id, m.name, m.avatar_seed)}
+                      className="flex shrink-0 items-center gap-1.5 p-1.5 pr-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-full border border-indigo-100 dark:border-indigo-800/30 hover:bg-indigo-100 dark:hover:bg-indigo-800/50 transition"
+                    >
+                      <Avatar seed={m.avatar_seed} size={24} />
+                      <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">{m.name}</span>
+                    </motion.button>
+                  ))}
+                </AnimatePresence>
               </div>
             </div>
           )}
@@ -134,32 +141,39 @@ export default function RoomPage() {
             <div className="mt-3 mb-2">
               <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1.5 px-1">{t('room.bench' as Parameters<typeof t>[0])}</p>
               <div className="flex flex-nowrap overflow-x-auto w-full gap-2 pb-2 scrollbar-hide">
-                {unseatedPlayers.map((p) => {
-                  // Find next vacant seat
-                  const nextVacantSeat = seats.find(s => s.playerId === null);
-                  return (
-                    <div
-                      key={p.id}
-                      className="flex shrink-0 items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-full border border-zinc-200 dark:border-zinc-700 p-1 pl-1.5 transition"
-                    >
-                      <button
-                        onClick={() => {
-                          if (nextVacantSeat) useGameStore.getState().assignSeat(nextVacantSeat.wind, p.id);
-                        }}
-                        className="flex items-center gap-1.5"
+                <AnimatePresence mode="popLayout">
+                  {unseatedPlayers.map((p) => {
+                    // Find next vacant seat
+                    const nextVacantSeat = seats.find(s => s.playerId === null);
+                    return (
+                      <motion.div
+                        layoutId={`player-anim-${p.savedMemberId || p.id}`}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
+                        key={p.id}
+                        className="flex shrink-0 items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-full border border-zinc-200 dark:border-zinc-700 p-1 pl-1.5 transition"
                       >
-                        <Avatar seed={p.avatarSeed} size={24} />
-                        <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300 pr-1">{p.name}</span>
-                      </button>
-                      <button 
-                        onClick={() => removePlayer(p.id)} 
-                        className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-100 dark:hover:bg-red-900/40 text-zinc-400 hover:text-red-500 transition-colors"
-                      >
-                        <span className="text-sm font-bold leading-none -mt-0.5">×</span>
-                      </button>
-                    </div>
-                  );
-                })}
+                        <button
+                          onClick={() => {
+                            if (nextVacantSeat) useGameStore.getState().assignSeat(nextVacantSeat.wind, p.id);
+                          }}
+                          className="flex items-center gap-1.5"
+                        >
+                          <Avatar seed={p.avatarSeed} size={24} />
+                          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300 pr-1">{p.name}</span>
+                        </button>
+                        <button 
+                          onClick={() => removePlayer(p.id)} 
+                          className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-100 dark:hover:bg-red-900/40 text-zinc-400 hover:text-red-500 transition-colors"
+                        >
+                          <span className="text-sm font-bold leading-none -mt-0.5">×</span>
+                        </button>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
               </div>
             </div>
           )}
@@ -206,7 +220,7 @@ export default function RoomPage() {
                     {player ? (
                       <motion.div
                         key={player.id}
-                        layoutId={`player-${player.id}`}
+                        layoutId={`player-anim-${player.savedMemberId || player.id}`}
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.8 }}
