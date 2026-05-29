@@ -33,13 +33,13 @@ export default function ProfilePage() {
     
     // 基础校验
     if (!name.trim()) {
-      setErrorMsg(t('profile.nameRequired' as any) || 'Name cannot be empty.');
+      setErrorMsg(t('profile.nameRequired'));
       return;
     }
     
     // 强制网络链接检查（简单的前端判断）
     if (!navigator.onLine) {
-      setErrorMsg(t('profile.offlineError' as any) || 'Network connection is required to update profile.');
+      setErrorMsg(t('profile.offlineError'));
       return;
     }
 
@@ -52,7 +52,7 @@ export default function ProfilePage() {
 
       if (error) throw error;
       
-      setSuccessMsg(t('profile.saveSuccess' as any) || 'Profile updated successfully!');
+      setSuccessMsg(t('profile.saveSuccess'));
       
       // 更新 auth store 以反映最新的 user
       if (data.user) {
@@ -63,7 +63,7 @@ export default function ProfilePage() {
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err: any) {
       console.error('Update profile error:', err);
-      setErrorMsg(err.message || t('profile.saveError' as any) || 'Failed to update profile.');
+      setErrorMsg(err.message || t('profile.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -96,13 +96,13 @@ export default function ProfilePage() {
         <div className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 ml-1">
-              {t('profile.displayName' as any) || 'Display Name'}
+              {t('profile.displayName')}
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={t('profile.namePlaceholder' as any) || 'Enter your name'}
+              placeholder={t('profile.namePlaceholder')}
               className="w-full bg-white dark:bg-zinc-800 border-2 border-zinc-200 dark:border-zinc-700 rounded-2xl px-4 py-3.5 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 outline-none focus:border-emerald-500 dark:focus:border-emerald-500 transition-colors shadow-sm text-base"
             />
           </div>
@@ -110,7 +110,7 @@ export default function ProfilePage() {
           {/* Email 展示（只读） */}
           <div className="space-y-1.5 opacity-70">
             <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 ml-1">
-              {t('profile.email' as any) || 'Email / Phone'}
+              {t('profile.email')}
             </label>
             <input
               type="text"
@@ -120,7 +120,7 @@ export default function ProfilePage() {
               className="w-full bg-zinc-100 dark:bg-zinc-800/50 border-2 border-transparent rounded-2xl px-4 py-3.5 text-zinc-500 dark:text-zinc-400 outline-none cursor-not-allowed text-base"
             />
             <p className="text-xs text-zinc-500 ml-1">
-              {t('profile.emailReadonlyDesc' as any) || 'Contact support to change your login method.'}
+              {t('profile.emailReadonlyDesc')}
             </p>
           </div>
         </div>
@@ -158,11 +158,11 @@ export default function ProfilePage() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                {t('profile.saving' as any) || 'Saving...'}
+                {t('profile.saving')}
               </>
             ) : (
               <>
-                <span>💾</span> {t('profile.saveBtn' as any) || 'Save Changes'}
+                <span>💾</span> {t('profile.saveBtn')}
               </>
             )}
           </button>

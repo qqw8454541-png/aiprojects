@@ -118,7 +118,7 @@ export default function TopBar() {
     } else if (currentPage === 'personal-menu') {
       Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('landing.personalMode')}</h1>;
     } else if (currentPage === 'profile') {
-      Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('profile.title' as Parameters<typeof t>[0]) || 'Profile'}</h1>;
+      Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('profile.title')}</h1>;
     } else if (currentPage === 'manage-rooms') {
       Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('manage.title')}</h1>;
     } else if (currentPage === 'room-history') {

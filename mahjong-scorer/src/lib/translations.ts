@@ -231,6 +231,19 @@ export const translations = {
     'sync.errorBtn': '後で試す',
     'sync.syncingTitle': 'データ同期中...',
     'sync.syncingDesc': 'ネットワーク接続を維持してください...',
+
+    // Profile
+    'profile.title': 'プロフィール',
+    'profile.displayName': '表示名',
+    'profile.namePlaceholder': '名前を入力',
+    'profile.nameRequired': '名前を入力してください',
+    'profile.email': 'メール / 電話番号',
+    'profile.emailReadonlyDesc': 'ログイン方法の変更はサポートにお問い合わせください。',
+    'profile.offlineError': 'プロフィールの更新にはネットワーク接続が必要です。',
+    'profile.saveSuccess': 'プロフィールが更新されました！',
+    'profile.saveError': 'プロフィールの更新に失敗しました。',
+    'profile.saveBtn': '変更を保存',
+    'profile.saving': '保存中...',
   },
   zh: {
     // Common
@@ -464,6 +477,19 @@ export const translations = {
     'sync.errorBtn': '稍后再试',
     'sync.syncingTitle': '数据同步中...',
     'sync.syncingDesc': '请保持网络连接...',
+
+    // Profile
+    'profile.title': '个人资料',
+    'profile.displayName': '显示昵称',
+    'profile.namePlaceholder': '输入您的名字',
+    'profile.nameRequired': '名字不能为空',
+    'profile.email': '邮箱 / 手机号',
+    'profile.emailReadonlyDesc': '如需更换绑定账号，请联系客服支持。',
+    'profile.offlineError': '需要网络连接才能更新个人资料。',
+    'profile.saveSuccess': '个人资料已更新！',
+    'profile.saveError': '更新个人资料失败。',
+    'profile.saveBtn': '保存更改',
+    'profile.saving': '保存中...',
   },
   en: {
     // Common
@@ -697,6 +723,19 @@ export const translations = {
     'sync.errorBtn': 'Try Again Later',
     'sync.syncingTitle': 'Syncing Data...',
     'sync.syncingDesc': 'Please keep your network connected...',
+
+    // Profile
+    'profile.title': 'Profile',
+    'profile.displayName': 'Display Name',
+    'profile.namePlaceholder': 'Enter your name',
+    'profile.nameRequired': 'Name cannot be empty',
+    'profile.email': 'Email / Phone',
+    'profile.emailReadonlyDesc': 'Contact support to change your login method.',
+    'profile.offlineError': 'Network connection is required to update profile.',
+    'profile.saveSuccess': 'Profile updated successfully!',
+    'profile.saveError': 'Failed to update profile.',
+    'profile.saveBtn': 'Save Changes',
+    'profile.saving': 'Saving...',
   },
 } as const;
 
