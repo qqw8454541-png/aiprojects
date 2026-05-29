@@ -432,6 +432,7 @@ export const useGameStore = create<GameState>()(
             device_id: deviceId,
             name: player.name,
             avatar_seed: player.avatarSeed,
+            updated_at: new Date().toISOString(),
           });
           memberIds.push(member.id);
           
