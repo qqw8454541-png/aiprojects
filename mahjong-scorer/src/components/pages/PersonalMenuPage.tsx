@@ -86,25 +86,33 @@ export default function PersonalMenuPage() {
           </button>
         ) : (
           <>
-            {/* 已登录：显示用户信息 */}
-            <div className="flex items-center gap-3 px-2 py-1">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-sm shadow">
+            {/* 已登录：显示用户信息，设为可点击 */}
+            <button
+              onClick={() => setPage('profile')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm hover:brightness-95 dark:hover:brightness-110 active:scale-[0.98] transition-all text-left group"
+            >
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-lg shadow">
                 {(user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || user?.phone?.slice(-4) || '?').charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                <div className="text-base font-bold text-zinc-900 dark:text-zinc-100 truncate flex items-center gap-2">
                   {user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || (user?.phone ? `Phone User` : 'User')}
+                  {isPro && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
+                      ⭐ PRO
+                    </span>
+                  )}
                 </div>
-                <div className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                <div className="text-sm text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
                   {user?.email || user?.phone || user?.id?.slice(0, 8)}
                 </div>
               </div>
-              {isPro && (
-                <span className="text-xs font-bold px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
-                  ⭐ Pro
-                </span>
-              )}
-            </div>
+              <div className="text-zinc-400 dark:text-zinc-500 flex-shrink-0 group-hover:translate-x-1 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
+              </div>
+            </button>
 
 
             {/* Pro 升级 (仅在非 Pro 时显示) */}

@@ -43,6 +43,8 @@ export default function TopBar() {
       backAction = () => setPage('landing');
     } else if (currentPage === 'personal-menu') {
       backAction = () => setPage('landing');
+    } else if (currentPage === 'profile') {
+      backAction = () => setPage('landing');
     } else if (currentPage === 'manage-rooms') {
       backAction = () => setPage('personal-menu');
     } else if (currentPage === 'room-history') {
@@ -115,6 +117,8 @@ export default function TopBar() {
       Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-[120px] sm:max-w-[200px]">{roomName ? roomName : t('result.reportTitle' as Parameters<typeof t>[0])}</h1>;
     } else if (currentPage === 'personal-menu') {
       Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('landing.personalMode')}</h1>;
+    } else if (currentPage === 'profile') {
+      Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('profile.title' as Parameters<typeof t>[0]) || 'Profile'}</h1>;
     } else if (currentPage === 'manage-rooms') {
       Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('manage.title')}</h1>;
     } else if (currentPage === 'room-history') {
@@ -150,14 +154,18 @@ export default function TopBar() {
         <div className="flex items-center gap-1">
           {/* User avatar / login button */}
           {authLoggedIn ? (
-            <div className="relative">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+            <button
+              onClick={() => setPage('profile')}
+              className="relative rounded-full border border-zinc-200 dark:border-zinc-700/50 shadow-sm active:scale-95 active:opacity-80 transition-all cursor-pointer ring-offset-background hover:ring-2 hover:ring-emerald-500/30"
+              aria-label="User Profile"
+            >
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-xs">
                 {(authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || authUser?.email || '?').charAt(0).toUpperCase()}
               </div>
               {authIsPro && (
                 <span className="absolute -top-0.5 -right-0.5 text-[8px]">⭐</span>
               )}
-            </div>
+            </button>
           ) : (
             <button
               onClick={() => openAuthModal('general')}

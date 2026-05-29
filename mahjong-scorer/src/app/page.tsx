@@ -17,6 +17,7 @@ const ScorePage = dynamic(() => import('@/components/pages/ScorePage'));
 const ResultPage = dynamic(() => import('@/components/pages/ResultPage'));
 const ManageRoomsPage = dynamic(() => import('@/components/pages/ManageRoomsPage'));
 const RoomHistoryPage = dynamic(() => import('@/components/pages/RoomHistoryPage'));
+const ProfilePage = dynamic(() => import('@/components/pages/ProfilePage'));
 
 // Heavy client-side library (html-to-image) that relies on window
 const ReportPage = dynamic(() => import('@/components/pages/ReportPage'), { ssr: false });
@@ -65,6 +66,7 @@ export default function Home() {
     case 'report':        return <ReportPage />;
     case 'manage-rooms':  return <ManageRoomsPage />;
     case 'room-history':  return <RoomHistoryPage />;
+    case 'profile':       return <ProfilePage />;
     default:              return <LandingPage />;
   }
 }

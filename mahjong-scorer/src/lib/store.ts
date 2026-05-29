@@ -49,7 +49,8 @@ export type AppPage =
   | 'report'
   | 'saved-rooms'
   | 'manage-rooms'
-  | 'room-history';
+  | 'room-history'
+  | 'profile';
 
 // ────────────────────────── State Interface ─────────────────────
 
