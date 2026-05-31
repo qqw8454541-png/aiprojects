@@ -12,6 +12,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useTheme } from 'next-themes';
 import { Loader2 } from 'lucide-react';
 import Avatar from '@/components/Avatar';
+import AiErrorModal from '@/components/AiErrorModal';
 
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
@@ -68,6 +69,7 @@ export default function ReportPage() {
   const [isGenerating, setIsGenerating] = useState(true);
   const [evaluations, setEvaluations] = useState<Record<string, string>>({});
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [aiError, setAiError] = useState<{ type: string; details?: string } | null>(null);
   
   const evalLockRef = useRef(false);
   const [evalCooldown, setEvalCooldown] = useState(0);
@@ -117,17 +119,7 @@ export default function ReportPage() {
       const result = await getEvaluationsBatch(playersData, locale, scoringCtx);
       
       if (result.error) {
-        let errorMsg = t('eval.apiError' as Parameters<typeof t>[0]) || "Error";
-        if (result.error === 'QUOTA_EXCEEDED') {
-          errorMsg = t('eval.quotaExceeded' as Parameters<typeof t>[0]);
-        } else if (result.error === 'NO_API_KEY') {
-          errorMsg = t('eval.noApiKey' as Parameters<typeof t>[0]);
-        } else if (result.error === 'JSON_FORMAT_ERROR') {
-          errorMsg = t('eval.formatError' as Parameters<typeof t>[0]);
-        } else if (result.error === 'CONNECTION_FAILED') {
-          errorMsg = t('eval.connectionError' as Parameters<typeof t>[0]);
-        }
-        alert(errorMsg);
+        setAiError({ type: result.error, details: result.details });
         return; // Exit early without touching state or cache
       }
 
@@ -139,7 +131,7 @@ export default function ReportPage() {
       }));
     } catch (e: any) {
       console.warn("fetchEvaluations catch:", e);
-      alert(t('eval.apiError' as Parameters<typeof t>[0]) || "Error");
+      setAiError({ type: 'UNKNOWN_ERROR', details: e?.message || String(e) });
     } finally {
       setIsEvaluating(false);
       evalLockRef.current = false;
@@ -386,6 +378,13 @@ export default function ReportPage() {
           {isGenerating || isEvaluating ? `⏳ ${t('result.downloadImage' as Parameters<typeof t>[0])}...` : `📸 ${t('result.downloadImage' as Parameters<typeof t>[0])}`}
         </button>
       </div>
+
+      <AiErrorModal
+        isOpen={!!aiError}
+        errorType={aiError?.type ?? null}
+        details={aiError?.details}
+        onClose={() => setAiError(null)}
+      />
     </div>
   );
 }

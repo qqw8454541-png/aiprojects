@@ -12,14 +12,21 @@ export interface PlayerEvalStats {
   history: number[];
 }
 
-export async function getEvaluationsBatch(players: PlayerEvalStats[], locale: string, scoringCtx?: ScoringContext): Promise<{ data?: Record<string, string>, error?: string }> {
+export async function getEvaluationsBatch(
+  players: PlayerEvalStats[], 
+  locale: string, 
+  scoringCtx?: ScoringContext
+): Promise<{ data?: Record<string, string>, error?: string, details?: string }> {
   // Use custom external API to prevent Gemini API Key exposure in APK
   const apiUrl = process.env.NEXT_PUBLIC_LLM_API_URL;
   const apiSecret = process.env.NEXT_PUBLIC_LLM_API_SECRET;
 
   if (!apiUrl || !apiSecret) {
     console.error("Missing NEXT_PUBLIC_LLM_API_URL or NEXT_PUBLIC_LLM_API_SECRET in environment");
-    return { error: 'NO_API_KEY' };
+    return { 
+      error: 'NETWORK_ERROR', 
+      details: 'Missing NEXT_PUBLIC_LLM_API_URL or NEXT_PUBLIC_LLM_API_SECRET in client environment variables.' 
+    };
   }
 
   try {
@@ -37,10 +44,15 @@ export async function getEvaluationsBatch(players: PlayerEvalStats[], locale: st
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return { error: 'QUOTA_EXCEEDED' };
-      }
-      return { error: 'GENERAL_API_ERROR' };
+      let errBody: any = null;
+      try {
+        errBody = await response.json();
+      } catch (_) {}
+
+      const errorType = errBody?.error || (response.status === 429 ? 'RATE_LIMIT_EXCEEDED' : 'SERVICE_ERROR');
+      const details = errBody?.message || `HTTP Request failed with status ${response.status} (${response.statusText})`;
+
+      return { error: errorType, details };
     }
 
     const json = await response.json();
@@ -48,12 +60,21 @@ export async function getEvaluationsBatch(players: PlayerEvalStats[], locale: st
       return { data: json.data as Record<string, string> };
     }
     
-    return { error: 'GENERAL_API_ERROR' };
+    return { 
+      error: 'SERVICE_ERROR', 
+      details: 'Server returned success status but missing valid data payload.' 
+    };
   } catch (error: any) {
     console.warn("Evaluation batch generation error:", error?.message || error);
     if (error?.name === 'TypeError' || (error?.message && error.message.includes('fetch'))) {
-      return { error: 'CONNECTION_FAILED' };
+      return { 
+        error: 'NETWORK_ERROR', 
+        details: `Failed to connect to LLM server: ${error?.message || error}` 
+      };
     }
-    return { error: 'GENERAL_API_ERROR' };
+    return { 
+      error: 'UNKNOWN_ERROR', 
+      details: error?.message || String(error) 
+    };
   }
 }

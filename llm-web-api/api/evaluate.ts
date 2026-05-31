@@ -13,15 +13,23 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN || 'gQAAAAAAAZ7AAAIgcDE5YTlkNmFhMzQ3MzI0YjZkOGE0NDRmNWEzMTc4M2RiMw'
 });
 
-// Create a new ratelimiter that allows 10 requests per 1 minute
-const ratelimit = new Ratelimit({
+import { rateLimitConfig } from '../src/rate-limit.config';
+
+// 1. Minute-level limiter (prevent burst attacks)
+const minuteRateLimit = new Ratelimit({
   redis: redis,
-  limiter: Ratelimit.slidingWindow(10, '1 m'),
+  limiter: Ratelimit.slidingWindow(rateLimitConfig.minuteLimit, '1 m'),
   analytics: false,
+  prefix: '@upstash/ratelimit/minute'
 });
 
-// Threshold for permanent ban: 3 rate-limit violations
-const BAN_THRESHOLD = 3;
+// 2. Daily-level limiter (prevent slow draining)
+const dailyRateLimit = new Ratelimit({
+  redis: redis,
+  limiter: Ratelimit.slidingWindow(rateLimitConfig.dailyLimit, '1 d'),
+  analytics: false,
+  prefix: '@upstash/ratelimit/daily'
+});
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS setup
@@ -37,7 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method Not Allowed' });
+    res.status(405).json({ error: 'NETWORK_ERROR', message: 'Method Not Allowed' });
     return;
   }
 
@@ -54,50 +62,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // 1. Check Blocklist (Fail2Ban Check)
-    /*
-    const isBanned = await redis.sismember('banned_ips', ip);
-    if (isBanned) {
-      console.warn(`[BLOCKED] Request from banned IP: ${ip}`);
-      res.status(403).json({ error: 'Forbidden' });
-      return;
-    }
+    // Rate Limiting Check
+    if (rateLimitConfig.enabled) {
+      // Prioritize userId if available in payload, fallback to IP
+      const identifier = req.body?.userId || ip;
 
-    // 2. Rate Limiting Check
-    const { success } = await ratelimit.limit(`ratelimit:${ip}`);
-    
-    if (!success) {
-      const violations = await redis.incr(`violations:${ip}`);
-      if (violations === 1) {
-        await redis.expire(`violations:${ip}`, 3600); // 1 hour
+      const [minuteResult, dailyResult] = await Promise.all([
+        minuteRateLimit.limit(identifier),
+        dailyRateLimit.limit(identifier)
+      ]);
+      
+      if (!minuteResult.success || !dailyResult.success) {
+        console.warn(`[RATE LIMIT EXCEEDED] Identifier: ${identifier}. Minute: ${minuteResult.success}, Daily: ${dailyResult.success}`);
+        res.status(429).json({ error: 'RATE_LIMIT_EXCEEDED', message: 'Too Many Requests' });
+        return;
       }
-      console.warn(`[RATE LIMIT] IP ${ip} exceeded limit. Violation count: ${violations}`);
-      if (violations >= BAN_THRESHOLD) {
-        await redis.sadd('banned_ips', ip);
-        console.error(`[BANNED] IP ${ip} has been permanently banned due to excessive violations.`);
-      }
-      res.status(429).json({ error: 'Too Many Requests' });
-      return;
     }
-    */
     // --- PROCEED WITH NORMAL API LOGIC ---
 
     // Authentication
     const authHeader = req.headers.authorization;
     if (!authHeader || authHeader !== `Bearer ${AUTH_SECRET}`) {
-      res.status(401).json({ error: 'Unauthorized' });
+      res.status(401).json({ error: 'NETWORK_ERROR', message: 'Unauthorized client credentials' });
       return;
     }
 
     if (!GEMINI_API_KEY) {
-      res.status(500).json({ error: 'Server configuration error: No Gemini API Key' });
+      res.status(500).json({ error: 'SERVICE_ERROR', message: 'Server configuration error: No Gemini API Key' });
       return;
     }
 
     const { players, locale, scoringCtx } = req.body;
 
     if (!players || !Array.isArray(players)) {
-      res.status(400).json({ error: 'Invalid players data' });
+      res.status(400).json({ error: 'NETWORK_ERROR', message: 'Invalid players data' });
       return;
     }
 
@@ -127,10 +125,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const text = await response.text();
       console.error(`LLM API Error [${response.status}]:`, text);
       if (response.status === 429) {
-        res.status(429).json({ error: 'QUOTA_EXCEEDED' });
+        res.status(429).json({ error: 'RATE_LIMIT_EXCEEDED', message: 'Gemini Quota Exceeded' });
         return;
       }
-      res.status(500).json({ error: 'GENERAL_API_ERROR' });
+      res.status(500).json({ error: 'SERVICE_ERROR', message: `Gemini API Error: ${text}` });
       return;
     }
 
@@ -141,7 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const jsonMatch = resultText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         console.error("LLM output did not contain a valid JSON block:", resultText);
-        res.status(500).json({ error: 'JSON_FORMAT_ERROR' });
+        res.status(500).json({ error: 'SERVICE_ERROR', message: 'Failed to extract valid JSON block from LLM output.' });
         return;
       }
       
@@ -149,15 +147,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const parsed = JSON.parse(jsonMatch[0]);
         res.status(200).json({ data: parsed });
         return;
-      } catch (parseError) {
+      } catch (parseError: any) {
         console.error("Failed to parse extracted JSON block:", jsonMatch[0], parseError);
-        res.status(500).json({ error: 'JSON_FORMAT_ERROR' });
+        res.status(500).json({ error: 'SERVICE_ERROR', message: `JSON format parsing failed: ${parseError?.message || parseError}` });
         return;
       }
     }
-    res.status(500).json({ error: 'GENERAL_API_ERROR' });
+    res.status(500).json({ error: 'SERVICE_ERROR', message: 'No content candidate generated by LLM' });
   } catch (error: any) {
     console.error("Evaluation API error:", error);
-    res.status(500).json({ error: 'GENERAL_API_ERROR' });
+    res.status(500).json({ error: 'UNKNOWN_ERROR', message: error?.message || 'Unknown server catch error' });
   }
 }
