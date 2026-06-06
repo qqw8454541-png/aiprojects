@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useI18n } from '@/lib/i18n';
 import { useAuthStore } from '@/lib/auth-store';
-import { PRICE_CONFIG } from '@/lib/billing.constants';
+
 import { useState } from 'react';
 import { hapticSuccess } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
@@ -22,8 +22,7 @@ export default function UpgradePrompt() {
   const [purchasing, setPurchasing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const priceKey = (locale === 'ja' ? 'ja' : locale === 'zh' ? 'zh' : 'en') as keyof typeof PRICE_CONFIG.pro;
-  const priceDisplay = PRICE_CONFIG.pro[priceKey];
+  const priceDisplay = t('upgrade.pricePro' as any);
 
   const handlePurchasePro = async () => {
     setPurchasing(true);
@@ -139,7 +138,7 @@ export default function UpgradePrompt() {
                   transition={{ delay: 0.4 }}
                   className="font-black text-2xl bg-gradient-to-br from-amber-500 to-orange-500 bg-clip-text text-transparent"
                 >
-                  {t('upgrade.successTitle' as any) || 'Welcome to Pro!'}
+                  {t('upgrade.successTitle' as any)}
                 </motion.h3>
                 <motion.p 
                   initial={{ opacity: 0, y: 10 }}
@@ -147,7 +146,7 @@ export default function UpgradePrompt() {
                   transition={{ delay: 0.5 }}
                   className="text-zinc-500 dark:text-zinc-400 text-sm font-medium"
                 >
-                  {t('upgrade.successDesc' as any) || 'All premium features are now unlocked.'}
+                  {t('upgrade.successDesc' as any)}
                 </motion.p>
               </div>
 
@@ -161,7 +160,7 @@ export default function UpgradePrompt() {
                 }}
                 className="w-full mt-4 py-4 rounded-2xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all active:scale-[0.97] shadow-lg"
               >
-                {t('common.confirm' as any) || 'Start Exploring'}
+                {t('common.confirm' as any)}
               </motion.button>
             </motion.div>
           ) : (
@@ -170,13 +169,13 @@ export default function UpgradePrompt() {
             <div className="text-center mb-5">
               <div className="text-5xl mb-3">⭐</div>
               <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100">
-                {t('upgrade.proTitle' as Parameters<typeof t>[0]) || 'Upgrade to Pro'}
+                {t('upgrade.proTitle' as Parameters<typeof t>[0])}
               </h3>
               <p className="text-3xl font-black text-amber-600 dark:text-amber-400 mt-2">
                 {priceDisplay}
               </p>
               <p className="text-xs text-zinc-500 mt-1">
-                {t('upgrade.subscription' as Parameters<typeof t>[0]) || 'Monthly subscription, cancel anytime'}
+                {t('upgrade.subscription' as Parameters<typeof t>[0])}
               </p>
             </div>
 
@@ -200,10 +199,10 @@ export default function UpgradePrompt() {
               }`}
             >
               {isPro
-                ? (t('upgrade.alreadyPro' as Parameters<typeof t>[0]) || '🎖️ Already Pro')
+                ? (t('upgrade.alreadyPro' as Parameters<typeof t>[0]))
                 : purchasing
                   ? '...'
-                  : (t('upgrade.buyPro' as Parameters<typeof t>[0]) || `Subscribe to Pro — ${priceDisplay}`)
+                  : (t('upgrade.buyPro' as Parameters<typeof t>[0]))
               }
             </button>
 

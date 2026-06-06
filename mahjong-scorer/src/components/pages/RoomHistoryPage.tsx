@@ -3,17 +3,20 @@ import { useState, useEffect, useRef } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { useGameStore } from '@/lib/store';
 import { getRepository } from '@/lib/repo-factory';
+import { useAuthStore } from '@/lib/auth-store';
 import type { DbCompletedSession } from '@/lib/repository';
 import Avatar from '@/components/Avatar';
 export default function RoomHistoryPage() {
   const { t } = useI18n();
   const { deviceId, viewingHistoryRoomId, setPage } = useGameStore();
+  const { isPro: authIsPro, user } = useAuthStore();
   const [sessions, setSessions] = useState<DbCompletedSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string[]>([]);
 
   useEffect(() => {
     if (!deviceId || !viewingHistoryRoomId) return;
+    setLoading(true);
     getRepository().then((repo) => {
       repo.sessions.list(deviceId, viewingHistoryRoomId)
         .then((d) => { setSessions(d); setLoading(false); })
@@ -26,6 +29,22 @@ export default function RoomHistoryPage() {
       console.error("Failed to initialize repository:", err);
       setLoading(false);
     });
+  }, [deviceId, viewingHistoryRoomId, authIsPro, user?.id]);
+
+  // 手机熄屏/Safari后台冻结 → 亮屏时自动刷新数据
+  useEffect(() => {
+    const onWake = () => {
+      if (document.visibilityState === 'visible' && deviceId && viewingHistoryRoomId) {
+        setLoading(true);
+        getRepository().then((repo) => {
+          repo.sessions.list(deviceId, viewingHistoryRoomId)
+            .then((d) => { setSessions(d); setLoading(false); })
+            .catch(() => setLoading(false));
+        }).catch(() => setLoading(false));
+      }
+    };
+    document.addEventListener('visibilitychange', onWake);
+    return () => document.removeEventListener('visibilitychange', onWake);
   }, [deviceId, viewingHistoryRoomId]);
 
   return (

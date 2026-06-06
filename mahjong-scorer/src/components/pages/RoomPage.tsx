@@ -51,6 +51,29 @@ export default function RoomPage() {
     });
   }, [deviceId]);
 
+  // 手机熄屏/Safari后台冻结 → 亮屏时刷新保存的成员列表
+  useEffect(() => {
+    const onWake = () => {
+      if (document.visibilityState === 'visible' && deviceId) {
+        getRepository().then((repo) => {
+          repo.members.list(deviceId).then(members => {
+            const unique: DbSavedMember[] = [];
+            const seen = new Set();
+            for (const m of members) {
+              if (!seen.has(m.name)) {
+                seen.add(m.name);
+                unique.push(m);
+              }
+            }
+            setSavedMembers(unique);
+          });
+        });
+      }
+    };
+    document.addEventListener('visibilitychange', onWake);
+    return () => document.removeEventListener('visibilitychange', onWake);
+  }, [deviceId]);
+
   const allSeated = seats.every((s) => s.playerId !== null);
   const currentlySeatedIds = seats.map(s => s.playerId).filter(Boolean);
   const unseatedPlayers = players.filter(p => !currentlySeatedIds.includes(p.id));
@@ -418,7 +441,7 @@ export default function RoomPage() {
                     onClick={() => setShowEndConfirm(false)}
                     className="flex-1 py-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold transition hover:bg-zinc-200 dark:hover:bg-zinc-700"
                   >
-                    {t('room.cancel' as Parameters<typeof t>[0]) || '取消'}
+                    {t('room.cancel')}
                   </button>
                   <button
                     onClick={async () => {
@@ -446,7 +469,7 @@ export default function RoomPage() {
                         }
 
                         if (!isDuplicate) {
-                          const defaultName = currentNames.join('、') + t('room.defaultRoomNameSuffix' as Parameters<typeof t>[0]);
+                          const defaultName = currentNames.join('、') + t('room.defaultRoomNameSuffix');
                           setPendingRoomName(defaultName);
                           setShowNamingModal(true);
                           return; // Don't reset yet — wait for naming modal
@@ -458,7 +481,7 @@ export default function RoomPage() {
                     }}
                     className="flex-1 py-3 rounded-xl bg-rose-500 text-white font-bold transition hover:bg-rose-400 active:scale-[0.97]"
                   >
-                    {t('room.confirm' as Parameters<typeof t>[0]) || '确认'}
+                    {t('room.confirm')}
                   </button>
                 </div>
               </div>
@@ -491,10 +514,13 @@ export default function RoomPage() {
             >
               <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
                 <h3 className="font-bold text-zinc-900 dark:text-zinc-100">
-                  {t('room.newTeamPrompt' as Parameters<typeof t>[0]) || '为新房间命名'}
+                  {t('room.newTeamTitle' as any)}
                 </h3>
               </div>
               <div className="p-6 space-y-4">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  {t('room.newTeamPrompt')}
+                </p>
                 <input
                   autoFocus
                   type="text"
@@ -523,7 +549,7 @@ export default function RoomPage() {
                     }}
                     className="flex-1 py-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold transition hover:bg-zinc-200 dark:hover:bg-zinc-700"
                   >
-                    {t('room.skip' as Parameters<typeof t>[0]) || '跳过'}
+                    {t('room.skip')}
                   </button>
                   <button
                     onClick={() => {

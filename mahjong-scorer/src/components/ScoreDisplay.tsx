@@ -13,11 +13,7 @@ interface ScoreDisplayProps {
   isAutoCalc: boolean;
 }
 
-const WIND_LABELS: Record<string, Record<Wind, string>> = {
-  ja: { east: '東', south: '南', west: '西', north: '北' },
-  zh: { east: '东', south: '南', west: '西', north: '北' },
-  en: { east: 'E', south: 'S', west: 'W', north: 'N' },
-};
+
 
 const WIND_COLORS: Record<Wind, string> = {
   east: 'bg-red-50 dark:bg-red-900/40 border-red-200 dark:border-red-500/50',
@@ -67,9 +63,8 @@ export default function ScoreDisplay({
   isActive,
   isAutoCalc,
 }: ScoreDisplayProps) {
-  const { locale } = useI18n();
   const { t } = useI18n();
-  const windLabel = WIND_LABELS[locale]?.[wind] ?? WIND_LABELS.en[wind];
+  const windLabel = t(`room.${wind}Short` as any);
   const { main, suffix } = formatScoreDisplay(inputValue);
 
   return (

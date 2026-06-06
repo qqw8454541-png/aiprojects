@@ -8,17 +8,17 @@ import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
 
 const COUNTRIES = [
-  { code: '+81', flag: '🇯🇵', name: 'Japan', nameZh: '日本' },
-  { code: '+86', flag: '🇨🇳', name: 'China', nameZh: '中国' },
-  { code: '+886', flag: '🇹🇼', name: 'Taiwan', nameZh: '台湾' },
-  { code: '+852', flag: '🇭🇰', name: 'Hong Kong', nameZh: '香港' },
-  { code: '+1', flag: '🇺🇸', name: 'US / Canada', nameZh: '美国/加拿大' },
-  { code: '+82', flag: '🇰🇷', name: 'South Korea', nameZh: '韩国' },
-  { code: '+65', flag: '🇸🇬', name: 'Singapore', nameZh: '新加坡' },
-  { code: '+60', flag: '🇲🇾', name: 'Malaysia', nameZh: '马来西亚' },
-  { code: '+44', flag: '🇬🇧', name: 'United Kingdom', nameZh: '英国' },
-  { code: '+61', flag: '🇦🇺', name: 'Australia', nameZh: '澳大利亚' },
-];
+  { code: '+81', flag: '🇯🇵', tKey: 'auth.country.jp' },
+  { code: '+86', flag: '🇨🇳', tKey: 'auth.country.cn' },
+  { code: '+886', flag: '🇹🇼', tKey: 'auth.country.tw' },
+  { code: '+852', flag: '🇭🇰', tKey: 'auth.country.hk' },
+  { code: '+1', flag: '🇺🇸', tKey: 'auth.country.us' },
+  { code: '+82', flag: '🇰🇷', tKey: 'auth.country.kr' },
+  { code: '+65', flag: '🇸🇬', tKey: 'auth.country.sg' },
+  { code: '+60', flag: '🇲🇾', tKey: 'auth.country.my' },
+  { code: '+44', flag: '🇬🇧', tKey: 'auth.country.uk' },
+  { code: '+61', flag: '🇦🇺', tKey: 'auth.country.au' },
+] as const;
 
 export default function AuthModal() {
   const { t, locale } = useI18n();
@@ -159,7 +159,7 @@ export default function AuthModal() {
           {/* Header */}
           <div className="p-5 pb-3 text-center">
             <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-100">
-              {t('auth.title' as Parameters<typeof t>[0]) || 'Sign In'}
+              {t('auth.title' as Parameters<typeof t>[0])}
             </h3>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1.5">
               {getContextMessage()}
@@ -179,7 +179,7 @@ export default function AuthModal() {
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                     <>
                       <span className="text-lg">🍎</span>
-                      {t('auth.apple' as Parameters<typeof t>[0]) || 'Sign in with Apple'}
+                      {t('auth.apple' as Parameters<typeof t>[0])}
                     </>
                   )}
                 </button>
@@ -193,7 +193,7 @@ export default function AuthModal() {
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                     <>
                       <span className="text-lg">🔵</span>
-                      {t('auth.google' as Parameters<typeof t>[0]) || 'Sign in with Google'}
+                      {t('auth.google' as Parameters<typeof t>[0])}
                     </>
                   )}
                 </button>
@@ -212,7 +212,7 @@ export default function AuthModal() {
                   className="w-full flex items-center justify-center gap-3 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-sm transition-all hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zinc-100 dark:disabled:hover:bg-zinc-800 disabled:active:scale-100"
                 >
                   <span>📧</span>
-                  {t('auth.email' as Parameters<typeof t>[0]) || 'Email Login'}
+                  {t('auth.email' as Parameters<typeof t>[0])}
                 </button>
 
                 {/* Phone */}
@@ -222,7 +222,7 @@ export default function AuthModal() {
                   className="w-full flex items-center justify-center gap-3 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-sm transition-all hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-[0.97]"
                 >
                   <span>📱</span>
-                  {t('auth.phone' as Parameters<typeof t>[0]) || 'Phone Login'}
+                  {t('auth.phone' as Parameters<typeof t>[0])}
                 </button>
               </>
             )}
@@ -245,7 +245,7 @@ export default function AuthModal() {
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{c.flag}</span>
                       <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {locale === 'zh' ? c.nameZh : c.name}
+                        {t(c.tKey as any)}
                       </span>
                     </div>
                     <span className="text-sm text-zinc-500 font-mono">{c.code}</span>
@@ -289,7 +289,7 @@ export default function AuthModal() {
                       type={mode === 'email' ? 'email' : 'tel'}
                       disabled={codeSent}
                       placeholder={mode === 'email'
-                        ? (t('auth.emailPlaceholder' as Parameters<typeof t>[0]) || 'your@email.com')
+                        ? (t('auth.emailPlaceholder' as Parameters<typeof t>[0]))
                         : 'XXXX-XXXX'
                       }
                       value={inputValue}
@@ -307,9 +307,9 @@ export default function AuthModal() {
                     ) : countdown > 0 ? (
                       `${countdown}s`
                     ) : codeSent ? (
-                      t('common.retry' as Parameters<typeof t>[0]) || 'Resend'
+                      t('common.retry' as Parameters<typeof t>[0])
                     ) : (
-                      t('auth.sendCode' as Parameters<typeof t>[0]) || 'Send'
+                      t('auth.sendCode' as Parameters<typeof t>[0])
                     )}
                   </button>
                 </div>
@@ -317,7 +317,7 @@ export default function AuthModal() {
                 {codeSent && (
                   <>
                     <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium text-center">
-                      ✓ {t('auth.codeSent' as Parameters<typeof t>[0]) || 'Code sent!'}
+                      ✓ {t('auth.codeSent' as Parameters<typeof t>[0])}
                     </p>
                     <input
                       autoFocus
@@ -337,10 +337,10 @@ export default function AuthModal() {
                       {loading ? (
                         <span className="flex items-center justify-center gap-2">
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          {t('auth.verifying' as Parameters<typeof t>[0]) || 'Verifying...'}
+                          {t('auth.verifying' as Parameters<typeof t>[0])}
                         </span>
                       ) : (
-                        t('auth.verifyAndLogin' as Parameters<typeof t>[0]) || 'Verify and Login'
+                        t('auth.verifyAndLogin' as Parameters<typeof t>[0])
                       )}
                     </button>
                   </>
@@ -350,7 +350,7 @@ export default function AuthModal() {
 
             {/* Footer */}
             <p className="text-[10px] text-zinc-400 dark:text-zinc-600 text-center pt-2 leading-relaxed">
-              {t('auth.terms' as Parameters<typeof t>[0]) || 'By signing in, you agree to the Terms of Service and Privacy Policy.'}
+              {t('auth.terms' as Parameters<typeof t>[0])}
             </p>
           </div>
         </motion.div>

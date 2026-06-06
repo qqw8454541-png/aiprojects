@@ -55,11 +55,11 @@ export default function RulePresets({ onSelect, defaultRules, submitLabel, disab
   const presetKeys = (Object.keys(PRESETS) as Array<keyof typeof PRESETS>).filter(k => PRESETS[k].mode === mode);
 
   const presetLabels: Record<string, string> = {
-    mLeague: t('create.mLeague' as Parameters<typeof t>[0]) || 'M-League',
-    majsoul: t('create.majsoul' as Parameters<typeof t>[0]) || 'Mahjong Soul',
-    wrc: t('create.wrc' as Parameters<typeof t>[0]) || 'WRC',
-    sanmaMajsoul: t('create.sanmaMajsoul' as Parameters<typeof t>[0]) || 'Sanma Majsoul',
-    sanmaStandard: t('create.sanmaStandard' as Parameters<typeof t>[0]) || 'Sanma Standard',
+    mLeague: t('create.mLeague' as Parameters<typeof t>[0]),
+    majsoul: t('create.majsoul' as Parameters<typeof t>[0]),
+    wrc: t('create.wrc' as Parameters<typeof t>[0]),
+    sanmaMajsoul: t('create.sanmaMajsoul' as Parameters<typeof t>[0]),
+    sanmaStandard: t('create.sanmaStandard' as Parameters<typeof t>[0]),
   };
 
   function handlePresetClick(key: string) {

@@ -5,7 +5,7 @@
  * 仅在 Web 端使用。
  */
 
-import { supabase } from './supabase';
+import { supabase, authReady } from './supabase';
 import { useAuthStore } from './auth-store';
 import { listUserDeviceIds } from './device-info';
 import type { RuleConfig } from './rules';
@@ -25,6 +25,7 @@ import type {
 
 class SupabaseMemberRepository implements IMemberRepository {
   async list(deviceId: string): Promise<DbSavedMember[]> {
+    await authReady;
     const { user, isPro } = useAuthStore.getState();
     let query = supabase.from('saved_members').select('*');
     
@@ -104,6 +105,7 @@ class SupabaseRoomRepository implements IRoomRepository {
   private roomMembers = new SupabaseRoomMemberRepository();
 
   async list(deviceId: string): Promise<DbSavedRoom[]> {
+    await authReady;
     const { user, isPro } = useAuthStore.getState();
     let query = supabase
       .from('saved_rooms')
@@ -196,6 +198,7 @@ class SupabaseRoomRepository implements IRoomRepository {
 
 class SupabaseSessionRepository implements ISessionRepository {
   async list(deviceId: string, savedRoomId?: string): Promise<DbCompletedSession[]> {
+    await authReady;
     const { user, isPro } = useAuthStore.getState();
     let query = supabase
       .from('completed_sessions')

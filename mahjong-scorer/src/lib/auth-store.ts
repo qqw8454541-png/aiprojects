@@ -10,7 +10,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User } from '@supabase/supabase-js';
-import { supabase } from './supabase';
+import { supabase, markAuthReady } from './supabase';
 import type { UserTier } from './billing.constants';
 import { useGameStore } from './store';
 import { claimDevice, registerDevice, collectDeviceInfo } from './device-info';
@@ -177,6 +177,7 @@ export const useAuthStore = create<AuthState>()(
                 alert(translate(getSavedLocale(), 'auth.sessionExpired' as any));
               }
             }
+            markAuthReady(); // 即使出错也要放行，否则查询永远挂起
             return;
           }
           
@@ -200,31 +201,37 @@ export const useAuthStore = create<AuthState>()(
               console.error('Device claim/sync failed on load:', e);
             }
           }
+          markAuthReady(); // Session 恢复完毕，放行所有等待中的数据查询
         }).catch(err => {
           console.error('Unexpected error during auth initialization:', err);
+          markAuthReady(); // 异常情况也要放行
         });
 
         // Listen for auth changes
-        supabase.auth.onAuthStateChange(async (_event, session) => {
+        supabase.auth.onAuthStateChange((_event, session) => {
           if (session?.user) {
             set({ user: session.user, isLoggedIn: true, showAuthModal: false });
-            await fetchTier(session.user.id);
-            // Claim device and register on login
-            try {
-              const deviceId = useGameStore.getState().deviceId;
-              if (deviceId) {
-                await claimDevice(deviceId, session.user.id);
-                const info = await collectDeviceInfo(deviceId);
-                await registerDevice(info, session.user.id);
-                
-                // If native platform and pro, start incremental sync
-                if (Capacitor.getPlatform() !== 'web' && get().isPro) {
-                  syncEngine.incrementalSync();
+            
+            // Run async DB queries outside the callback to prevent Supabase auth lock deadlocks
+            setTimeout(async () => {
+              await fetchTier(session.user.id);
+              // Claim device and register on login
+              try {
+                const deviceId = useGameStore.getState().deviceId;
+                if (deviceId) {
+                  await claimDevice(deviceId, session.user.id);
+                  const info = await collectDeviceInfo(deviceId);
+                  await registerDevice(info, session.user.id);
+                  
+                  // If native platform and pro, start incremental sync
+                  if (Capacitor.getPlatform() !== 'web' && get().isPro) {
+                    syncEngine.incrementalSync();
+                  }
                 }
+              } catch (e) {
+                console.error('Device claim/sync failed on auth change:', e);
               }
-            } catch (e) {
-              console.error('Device claim/sync failed on auth change:', e);
-            }
+            }, 0);
           } else {
             set({ user: null, isLoggedIn: false });
           }
@@ -238,6 +245,7 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isLoggedIn: state.isLoggedIn,
         tier: state.tier,
+        isPro: state.isPro,
       }),
     }
   )
