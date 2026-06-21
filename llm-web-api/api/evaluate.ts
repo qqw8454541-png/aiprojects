@@ -33,8 +33,9 @@ const dailyRateLimit = new Ratelimit({
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS setup
+  const origin = req.headers.origin || '*';
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*'); 
+  res.setHeader('Access-Control-Allow-Origin', origin); 
   res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, POST');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-forwarded-for');
 
