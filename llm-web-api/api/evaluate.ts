@@ -6,30 +6,36 @@ import { LLM_CONFIG, type ScoringContext } from '../src/llm.config';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const AUTH_SECRET = process.env.LLM_API_SECRET;
 
-// Initialize Redis using environment variables. 
-// Note: When deploying to Vercel, make sure to add UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN to the environment.
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL as string,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN as string
-});
-
 import { rateLimitConfig } from '../src/rate-limit.config';
 
-// 1. Minute-level limiter (prevent burst attacks)
-const minuteRateLimit = new Ratelimit({
-  redis: redis,
-  limiter: Ratelimit.slidingWindow(rateLimitConfig.minuteLimit, '1 m'),
-  analytics: false,
-  prefix: '@upstash/ratelimit/minute'
-});
+const hasRedisConfig = !!process.env.UPSTASH_REDIS_REST_URL && !!process.env.UPSTASH_REDIS_REST_TOKEN;
+const isRateLimitEnabled = rateLimitConfig.enabled && hasRedisConfig;
 
-// 2. Daily-level limiter (prevent slow draining)
-const dailyRateLimit = new Ratelimit({
-  redis: redis,
-  limiter: Ratelimit.slidingWindow(rateLimitConfig.dailyLimit, '1 d'),
-  analytics: false,
-  prefix: '@upstash/ratelimit/daily'
-});
+let minuteRateLimit: Ratelimit | undefined;
+let dailyRateLimit: Ratelimit | undefined;
+
+if (hasRedisConfig) {
+  const redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL as string,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN as string
+  });
+
+  // 1. Minute-level limiter (prevent burst attacks)
+  minuteRateLimit = new Ratelimit({
+    redis: redis,
+    limiter: Ratelimit.slidingWindow(rateLimitConfig.minuteLimit, '1 m'),
+    analytics: false,
+    prefix: '@upstash/ratelimit/minute'
+  });
+
+  // 2. Daily-level limiter (prevent slow draining)
+  dailyRateLimit = new Ratelimit({
+    redis: redis,
+    limiter: Ratelimit.slidingWindow(rateLimitConfig.dailyLimit, '1 d'),
+    analytics: false,
+    prefix: '@upstash/ratelimit/daily'
+  });
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS setup
@@ -63,7 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // Rate Limiting Check
-    if (rateLimitConfig.enabled) {
+    if (isRateLimitEnabled && minuteRateLimit && dailyRateLimit) {
       // Prioritize userId if available in payload, fallback to IP
       const identifier = req.body?.userId || ip;
 
