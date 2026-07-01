@@ -34,9 +34,9 @@ if [ $? -eq 0 ]; then
 
   echo ""
   echo "======================================="
-  echo "   🌍 Running E2E API Test (test_llm.mjs) "
+  echo "   🌍 Running E2E API Test (test_llm.sh) "
   echo "======================================="
-  node ./test_llm.mjs
+  ./test_llm.sh
   
   if [ $? -eq 0 ]; then
     echo "✅ E2E API Test completed."
