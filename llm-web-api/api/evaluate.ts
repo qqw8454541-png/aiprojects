@@ -4,7 +4,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { LLM_CONFIG, type ScoringContext } from '../src/llm.config';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const AUTH_SECRET = process.env.LLM_API_SECRET;
+const AUTH_SECRET = process.env.LLM_API_SECRET || 'dev-secret-key-123';
 
 import { rateLimitConfig } from '../src/rate-limit.config';
 
