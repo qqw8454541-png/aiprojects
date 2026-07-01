@@ -4,14 +4,19 @@
   "description": "Standalone Web API for LLM Evaluation",
   "main": "index.js",
   "scripts": {
-    "local": "npx vercel dev --listen 3002"
+    "local": "npx vercel dev --listen 3002",
+    "test": "jest --coverage"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.0.0",
     "@vercel/node": "^3.0.0",
+    "jest": "^30.4.2",
+    "node-mocks-http": "^1.17.2",
+    "ts-jest": "^29.4.11",
     "typescript": "^5.0.0"
   },
   "dependencies": {

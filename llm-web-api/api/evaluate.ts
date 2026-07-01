@@ -3,14 +3,14 @@ import { Redis } from '@upstash/redis';
 import { Ratelimit } from '@upstash/ratelimit';
 import { LLM_CONFIG, type ScoringContext } from '../src/llm.config';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const AUTH_SECRET = process.env.LLM_API_SECRET || 'dev-secret-key-123';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const AUTH_SECRET = process.env.LLM_API_SECRET;
 
 // Initialize Redis using environment variables. 
 // Note: When deploying to Vercel, make sure to add UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN to the environment.
 const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || 'https://eternal-antelope-106176.upstash.io',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || 'gQAAAAAAAZ7AAAIgcDE5YTlkNmFhMzQ3MzI0YjZkOGE0NDRmNWEzMTc4M2RiMw'
+  url: process.env.UPSTASH_REDIS_REST_URL as string,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN as string
 });
 
 import { rateLimitConfig } from '../src/rate-limit.config';
@@ -105,7 +105,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const prompt = LLM_CONFIG.buildPrompt(JSON.stringify(players, null, 2), langName, scoringCtx);
     const apiUrl = LLM_CONFIG.buildApiUrl(LLM_CONFIG.MODEL_ID, GEMINI_API_KEY);
 
-    const response = await fetch(apiUrl, {
+    const fetchOptions = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -119,7 +119,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           topP: 0.95,
         }
       })
-    });
+    };
+
+    let response: globalThis.Response | undefined;
+    let retries = 3;
+    let delay = 1000;
+
+    for (let i = 0; i <= retries; i++) {
+      response = await fetch(apiUrl, fetchOptions);
+      if (response.ok) {
+        break;
+      }
+      
+      const status = response.status;
+      if (status === 503 && i < retries) {
+        console.warn(`[Retry ${i + 1}/${retries}] Gemini API returned ${status}. Retrying in ${delay}ms...`);
+        await new Promise(res => setTimeout(res, delay));
+        delay *= 2; // Exponential backoff
+      } else {
+        break;
+      }
+    }
+
+    if (!response) {
+      res.status(500).json({ error: 'SERVICE_ERROR', message: 'Failed to execute fetch' });
+      return;
+    }
 
     if (!response.ok) {
       const text = await response.text();
