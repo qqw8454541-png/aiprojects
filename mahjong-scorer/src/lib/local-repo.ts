@@ -599,4 +599,123 @@ export class LocalRepository implements IRepository {
 
     return sessions;
   }
+
+  // ── Import methods for cloud → local sync ───────────────────
+
+  /**
+   * 从云端导入一个 member（upsert 语义）。
+   * 如果本地已有更新的版本则跳过。
+   */
+  async importMember(m: DbSavedMember): Promise<void> {
+    const db = await getDb();
+    // 检查本地是否已有更新版本
+    const existing = await db.query(`SELECT updated_at FROM saved_members WHERE id = ?`, [m.id]);
+    if (existing.values && existing.values.length > 0) {
+      const localUpdatedAt = existing.values[0].updated_at;
+      if (localUpdatedAt && localUpdatedAt >= m.updated_at) {
+        return; // 本地版本更新，跳过
+      }
+    }
+    await db.run(
+      `INSERT INTO saved_members (id, device_id, name, avatar_seed, created_at, updated_at, deleted_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         name = excluded.name,
+         avatar_seed = excluded.avatar_seed,
+         updated_at = excluded.updated_at,
+         deleted_at = excluded.deleted_at`,
+      [m.id, m.device_id, m.name, m.avatar_seed, m.created_at, m.updated_at, m.deleted_at ?? null]
+    );
+  }
+
+  /**
+   * 从云端导入一个 room（upsert 语义）+ 其 room_members。
+   */
+  async importRoom(r: DbSavedRoom): Promise<void> {
+    const db = await getDb();
+    const existing = await db.query(`SELECT updated_at FROM saved_rooms WHERE id = ?`, [r.id]);
+    if (existing.values && existing.values.length > 0) {
+      const localUpdatedAt = existing.values[0].updated_at;
+      if (localUpdatedAt && localUpdatedAt >= r.updated_at) {
+        return;
+      }
+    }
+    await db.run(
+      `INSERT INTO saved_rooms (id, device_id, name, rules, created_at, updated_at, deleted_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         name = excluded.name,
+         rules = excluded.rules,
+         updated_at = excluded.updated_at,
+         deleted_at = excluded.deleted_at`,
+      [r.id, r.device_id, r.name, JSON.stringify(r.rules), r.created_at, r.updated_at, r.deleted_at ?? null]
+    );
+
+    // 同步 room_members
+    if (r.members && r.members.length > 0) {
+      await db.run(`DELETE FROM room_members WHERE room_id = ?`, [r.id]);
+      for (let i = 0; i < r.members.length; i++) {
+        const member = r.members[i];
+        // 确保 member 也存在于本地
+        await this.importMember(member);
+        await db.run(
+          `INSERT OR IGNORE INTO room_members (room_id, member_id, sort_order) VALUES (?, ?, ?)`,
+          [r.id, member.id, i]
+        );
+      }
+    }
+  }
+
+  /**
+   * 从云端导入一个 session（跳过已存在的）。
+   */
+  async importSession(s: DbCompletedSession): Promise<void> {
+    const db = await getDb();
+    // sessions 是只增不改的，已存在则跳过
+    const existing = await db.query(`SELECT id FROM completed_sessions WHERE id = ?`, [s.id]);
+    if (existing.values && existing.values.length > 0) {
+      return;
+    }
+
+    await db.run(
+      `INSERT INTO completed_sessions (id, device_id, saved_room_id, room_name, played_at)
+       VALUES (?, ?, ?, ?, ?)`,
+      [s.id, s.device_id, s.saved_room_id ?? null, s.room_name, s.played_at]
+    );
+
+    // session_players
+    if (s.sessionPlayers && s.sessionPlayers.length > 0) {
+      for (let i = 0; i < s.sessionPlayers.length; i++) {
+        const p = s.sessionPlayers[i];
+        await db.run(
+          `INSERT INTO session_players (id, session_id, player_id, player_name, avatar_seed, saved_member_id, seat_index)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [uuid(), s.id, p.player_id, p.player_name, p.avatar_seed, p.saved_member_id || null, p.seat_index ?? i]
+        );
+      }
+    }
+
+    // session_rounds + round_player_results
+    if (s.sessionRounds && s.sessionRounds.length > 0) {
+      for (const round of s.sessionRounds) {
+        const roundId = uuid();
+        await db.run(
+          `INSERT INTO session_rounds (id, session_id, round_number, status, start_time, end_time)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [roundId, s.id, round.round_number, round.status, round.start_time, round.end_time ?? null]
+        );
+
+        if (round.results && round.results.length > 0) {
+          for (const r of round.results) {
+            await db.run(
+              `INSERT INTO round_player_results (id, round_id, player_id, player_name, wind, raw_score, rank, pt)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+              [uuid(), roundId, r.player_id, r.player_name, r.wind, r.raw_score, r.rank, r.pt]
+            );
+          }
+        }
+      }
+    }
+  }
 }
+

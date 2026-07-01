@@ -9,6 +9,13 @@ export const translations = {
     'common.cancel': 'キャンセル',
     'common.reset': 'リセット',
     'common.close': '閉じる',
+    'common.retry': 'リトライ',
+
+    // Connection
+    'connection.recovering': '接続を回復中...',
+    'connection.failed': '接続が切断されました',
+    'connection.refresh': 'リロード',
+    'connection.sessionExpiring': 'セッションがまもなく期限切れになります。操作を続けてください。',
 
     // Landing
     'landing.venueMode': '麻雀スペース',
@@ -249,6 +256,8 @@ export const translations = {
     'sync.errorBtn': '後で試す',
     'sync.syncingTitle': 'データ同期中...',
     'sync.syncingDesc': 'ネットワーク接続を維持してください...',
+    'sync.syncing': 'データ同期中...',
+    'sync.pleaseWait': 'アプリを閉じないでください',
 
     // Profile
     'profile.title': 'プロフィール',
@@ -273,6 +282,13 @@ export const translations = {
     'common.cancel': '取消',
     'common.reset': '重置',
     'common.close': '关闭',
+    'common.retry': '重试',
+
+    // Connection
+    'connection.recovering': '正在恢复连接...',
+    'connection.failed': '连接已断开',
+    'connection.refresh': '刷新',
+    'connection.sessionExpiring': '会话即将过期，请操作以保持在线',
 
     // Landing
     'landing.venueMode': '麻将馆模式',
@@ -513,6 +529,8 @@ export const translations = {
     'sync.errorBtn': '稍后再试',
     'sync.syncingTitle': '数据同步中...',
     'sync.syncingDesc': '请保持网络连接...',
+    'sync.syncing': '数据同步中...',
+    'sync.pleaseWait': '请勿关闭应用',
 
     // Profile
     'profile.title': '个人资料',
@@ -537,6 +555,13 @@ export const translations = {
     'common.cancel': 'Cancel',
     'common.reset': 'Reset',
     'common.close': 'Close',
+    'common.retry': 'Retry',
+
+    // Connection
+    'connection.recovering': 'Reconnecting...',
+    'connection.failed': 'Connection lost',
+    'connection.refresh': 'Refresh',
+    'connection.sessionExpiring': 'Session expiring soon. Interact to stay online.',
 
     // Landing
     'landing.venueMode': 'Venue Mode',
@@ -777,6 +802,8 @@ export const translations = {
     'sync.errorBtn': 'Try Again Later',
     'sync.syncingTitle': 'Syncing Data...',
     'sync.syncingDesc': 'Please keep your network connected...',
+    'sync.syncing': 'Syncing data...',
+    'sync.pleaseWait': 'Please do not close the app',
 
     // Profile
     'profile.title': 'Profile',

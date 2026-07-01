@@ -9,6 +9,13 @@ const config: CapacitorConfig = {
     backgroundColor: '#09090b',
     allowMixedContent: true,
   },
+  server: {
+    androidScheme: 'https',
+    allowNavigation: [
+      'xkpebhhwkuqrywqckrlu.supabase.co',
+      'llm-web-api.vercel.app',
+    ],
+  },
   plugins: {
     SplashScreen: {
       backgroundColor: '#09090b',

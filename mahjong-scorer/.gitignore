@@ -44,3 +44,19 @@ next-env.d.ts
 android/app/src/main/res/drawable*/splash.png
 android/app/src/main/res/mipmap*/ic_launcher*.png
 android/app/src/main/res/mipmap-anydpi-v26/ic_launcher*.xml
+
+# Android build outputs
+android/app/build/
+android/build/
+android/.gradle/
+android/.kotlin/
+
+# E2E test artifacts
+e2e-report/
+e2e-report.zip
+e2e-web-report/
+e2e/test-results/
+test-results/
+playwright-report/
+.auth-state.json
+

@@ -8,6 +8,7 @@ import { SyncProvider } from '@/components/SyncProvider';
 import AuthModal from '@/components/AuthModal';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import SyncScreen from '@/components/SyncScreen';
+import ConnectionGuard from '@/components/ConnectionGuard';
 import './globals.css';
 
 const notoSansJP = Noto_Sans_JP({
@@ -55,6 +56,7 @@ export default function RootLayout({
         <ThemeProviders>
           <I18nProvider>
             <SyncProvider>
+              <ConnectionGuard />
               <TopBar />
               <SwipeNavigation />
               <AuthModal />

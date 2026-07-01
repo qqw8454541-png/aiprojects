@@ -10,8 +10,29 @@ export interface SyncProgress {
   message: string;
 }
 
+// ── Sync state event bus ─────────────────────────────────────
+// 让 UI 组件（如 SyncOverlay）能监听同步状态变更。
+type SyncListener = (isSyncing: boolean) => void;
+const _syncListeners: Set<SyncListener> = new Set();
+
+export function onSyncStateChange(listener: SyncListener): () => void {
+  _syncListeners.add(listener);
+  return () => { _syncListeners.delete(listener); };
+}
+
+function notifySyncState(isSyncing: boolean) {
+  _syncListeners.forEach((fn) => {
+    try { fn(isSyncing); } catch (e) { console.error('[sync-engine] listener error:', e); }
+  });
+}
+
+/** 增量同步的定期触发间隔 (ms) — 5 分钟 */
+const PERIODIC_SYNC_INTERVAL_MS = 5 * 60 * 1000;
+
 class SyncEngine {
   private isRunning: boolean = false;
+  private periodicTimer: ReturnType<typeof setInterval> | null = null;
+  private visibilityHandler: (() => void) | null = null;
 
   private async getLocalRepo() {
     const repo = await getRepository();
@@ -23,6 +44,7 @@ class SyncEngine {
   async fullSync(onProgress: (p: SyncProgress) => void): Promise<{ success: boolean; error?: string }> {
     if (this.isRunning) return { success: false, error: 'Already syncing' };
     this.isRunning = true;
+    notifySyncState(true);
     
     try {
       const { user, isPro } = useAuthStore.getState();
@@ -161,6 +183,7 @@ class SyncEngine {
       return { success: false, error: err.message };
     } finally {
       this.isRunning = false;
+      notifySyncState(false);
     }
   }
 
@@ -174,6 +197,7 @@ class SyncEngine {
     if (!deviceId) return;
 
     this.isRunning = true;
+    notifySyncState(true);
     try {
       const localRepo = await this.getLocalRepo();
       if (!localRepo.exportAllMembers) return; // not native
@@ -185,8 +209,6 @@ class SyncEngine {
       }
 
       // Simplified approach for incremental: re-upload recently updated local records
-      // In a real production app, we would query local SQLite where updated_at > lastSynced
-      // For brevity, pulling the full dataset and filtering locally:
       const localMembers = await localRepo.exportAllMembers();
       const localRooms = await localRepo.exportAllRooms();
       const localSessions = await localRepo.exportAllSessions();
@@ -249,7 +271,7 @@ class SyncEngine {
         }
       }
 
-      // Download phase
+      // Download phase — 完整实现
       await this.pullRemoteData(user.id, deviceId, localRepo, lastSynced);
 
       const now = new Date().toISOString();
@@ -260,6 +282,7 @@ class SyncEngine {
       console.error('Incremental sync failed', e);
     } finally {
       this.isRunning = false;
+      notifySyncState(false);
     }
   }
 
@@ -284,18 +307,151 @@ class SyncEngine {
     const deviceIds = devices.map(d => d.device_id).filter(id => id !== currentDeviceId);
     if (deviceIds.length === 0) return;
 
-    // 2. Fetch members
+    // 2. Fetch and import remote members
     const { data: remoteMembers } = await supabase
       .from('saved_members')
       .select('*')
       .in('device_id', deviceIds)
       .gt('updated_at', since);
 
-    if (remoteMembers) {
-      // Direct raw query to local SQLite through repo might be needed or we can use upsert
-      // Since local repo upsert method doesn't take created_at easily, 
-      // in a full implementation we'd expose a direct db.run to localRepo.
-      // We will skip full DB reflection here for brevity, but the idea is to UPSERT into local SQLite.
+    if (remoteMembers && localRepo.importMember) {
+      for (const m of remoteMembers) {
+        try {
+          await localRepo.importMember(m);
+        } catch (e) {
+          console.warn('[sync] Failed to import member:', m.id, e);
+        }
+      }
+    }
+
+    // 3. Fetch and import remote rooms (with members)
+    const { data: remoteRooms } = await supabase
+      .from('saved_rooms')
+      .select(`
+        *,
+        room_members (
+          sort_order,
+          saved_members (*)
+        )
+      `)
+      .in('device_id', deviceIds)
+      .gt('updated_at', since);
+
+    if (remoteRooms && localRepo.importRoom) {
+      for (const room of remoteRooms) {
+        try {
+          // Transform the joined data to match DbSavedRoom shape
+          const members = (room.room_members ?? [])
+            .sort((a: any, b: any) => a.sort_order - b.sort_order)
+            .map((rm: any) => Array.isArray(rm.saved_members) ? rm.saved_members[0] : rm.saved_members)
+            .filter(Boolean);
+
+          await localRepo.importRoom({ ...room, members, rules: room.rules });
+        } catch (e) {
+          console.warn('[sync] Failed to import room:', room.id, e);
+        }
+      }
+    }
+
+    // 4. Fetch and import remote sessions
+    const { data: remoteSessions } = await supabase
+      .from('completed_sessions')
+      .select('*')
+      .in('device_id', deviceIds)
+      .gt('played_at', since);
+
+    if (remoteSessions && localRepo.importSession) {
+      for (const session of remoteSessions) {
+        try {
+          // Fetch session players
+          const { data: playersData } = await supabase
+            .from('session_players')
+            .select('*')
+            .eq('session_id', session.id)
+            .order('seat_index', { ascending: true });
+
+          // Fetch session rounds with nested results
+          const { data: roundsData } = await supabase
+            .from('session_rounds')
+            .select('*')
+            .eq('session_id', session.id)
+            .order('round_number', { ascending: true });
+
+          const sessionRounds = [];
+          for (const rd of roundsData ?? []) {
+            const { data: resultsData } = await supabase
+              .from('round_player_results')
+              .select('*')
+              .eq('round_id', rd.id)
+              .order('rank', { ascending: true });
+
+            sessionRounds.push({
+              ...rd,
+              start_time: Number(rd.start_time),
+              end_time: rd.end_time ? Number(rd.end_time) : undefined,
+              results: (resultsData ?? []).map((r: any) => ({
+                ...r,
+                pt: Number(r.pt),
+              })),
+            });
+          }
+
+          await localRepo.importSession({
+            ...session,
+            sessionRounds,
+            sessionPlayers: playersData ?? [],
+          });
+        } catch (e) {
+          console.warn('[sync] Failed to import session:', session.id, e);
+        }
+      }
+    }
+  }
+
+  // ── Periodic Sync Lifecycle ─────────────────────────────────
+
+  /**
+   * 启动定期增量同步。
+   * 在 native 端 Pro 用户登录后由 SyncProvider 调用。
+   * 同时注册 visibilitychange 事件，在 App 唤醒时触发同步。
+   */
+  startPeriodicSync(): void {
+    this.stopPeriodicSync(); // 防止重复
+
+    // 定期触发
+    this.periodicTimer = setInterval(() => {
+      this.incrementalSync();
+    }, PERIODIC_SYNC_INTERVAL_MS);
+
+    // App 唤醒时触发
+    this.visibilityHandler = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        // 延迟 1 秒等待网络恢复
+        setTimeout(() => {
+          this.incrementalSync();
+        }, 1000);
+      }
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', this.visibilityHandler);
+    }
+
+    // 立即执行一次
+    this.incrementalSync();
+  }
+
+  /**
+   * 停止定期同步（用户登出或组件卸载时调用）。
+   */
+  stopPeriodicSync(): void {
+    if (this.periodicTimer) {
+      clearInterval(this.periodicTimer);
+      this.periodicTimer = null;
+    }
+    if (this.visibilityHandler && typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
     }
   }
 }

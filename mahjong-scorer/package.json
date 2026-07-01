@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "mobile:sync": "MOBILE_BUILD=true npm run build && node scripts/strip-lab-colors.mjs && npx cap sync",
-    "mobile:build:android": "MOBILE_BUILD=true npm run build && node scripts/strip-lab-colors.mjs && npx cap sync android && cd android && ./gradlew assembleDebug"
+    "mobile:build:android": "MOBILE_BUILD=true npm run build && node scripts/strip-lab-colors.mjs && npx cap sync android && cd android && ./gradlew assembleDebug",
+    "test:e2e": "bash e2e/run-e2e.sh",
+    "test:e2e:quick": "bash e2e/run-e2e.sh --skip-build",
+    "test:e2e:smoke": "bash e2e/run-e2e.sh --skip-build smoke"
   },
   "dependencies": {
     "@capacitor-community/sqlite": "^8.1.0",
@@ -38,12 +41,14 @@
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.3.0",
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.7",
+    "playwright": "^1.60.0",
     "supabase": "^2.95.6",
     "tailwindcss": "^4",
     "typescript": "^5"
