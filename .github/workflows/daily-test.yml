@@ -26,7 +26,9 @@ jobs:
 
       - name: Run API LLM Test Script
         working-directory: ./llm-web-api
-        run: node test_llm.mjs
+        env:
+          LLM_API_SECRET: ${{ secrets.LLM_API_SECRET }}
+        run: ./test_llm.sh
 
       - name: Run Redis Test Script
         working-directory: ./llm-web-api
