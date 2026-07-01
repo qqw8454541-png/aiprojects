@@ -20,6 +20,17 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run Test Script
+      - name: Install Dependencies
+        working-directory: ./llm-web-api
+        run: npm install
+
+      - name: Run API LLM Test Script
         working-directory: ./llm-web-api
         run: node test_llm.mjs
+
+      - name: Run Redis Test Script
+        working-directory: ./llm-web-api
+        env:
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+        run: npx ts-node test-redis.ts
