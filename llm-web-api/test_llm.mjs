@@ -1,4 +1,5 @@
-const apiUrl = "https://llm-web-api.vercel.app/api/evaluate";
+// 注意：此处故意改错 API 路径以触发测试失败邮件
+const apiUrl = "https://llm-web-api.vercel.app/api/evaluate-intentionally-broken";
 const apiSecret = "dev-secret-key-123";
 
 const players = [
@@ -30,7 +31,7 @@ async function testLLM() {
     console.log("Status Code:", response.status);
     if (!response.ok) {
       console.log("Error response text:", await response.text());
-      return;
+      process.exit(1);
     }
 
     const json = await response.json();
@@ -38,6 +39,7 @@ async function testLLM() {
     console.log(JSON.stringify(json, null, 2));
   } catch (error) {
     console.error("Error during fetch:", error);
+    process.exit(1);
   }
 }
 
