@@ -2,13 +2,11 @@ name: Daily LLM API Test
 
 on:
   schedule:
-    # 每天 UTC 时间 15:00 运行（对应北京时间 23:00 / 或 UTC 16:00 对应北京时间 00:00）
-    # 下面设定为 UTC 16:00 (北京时间 0:00)
     - cron: '0 16 * * *'
-  workflow_dispatch: # 允许手动触发
+  workflow_dispatch:
   push:
     branches:
-      - main # 为了让你现在 push 就能立刻看到效果，先配置推送到 main 也触发
+      - main
 
 jobs:
   run-test:
@@ -23,4 +21,5 @@ jobs:
           node-version: '20'
 
       - name: Run Test Script
+        working-directory: ./llm-web-api
         run: node test_llm.mjs
