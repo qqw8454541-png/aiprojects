@@ -1,5 +1,4 @@
-// 注意：此处故意改错 API 路径以触发测试失败邮件
-const apiUrl = "https://llm-web-api.vercel.app/api/evaluate-intentionally-broken";
+const apiUrl = "https://llm-web-api.vercel.app/api/evaluate";
 const apiSecret = "dev-secret-key-123";
 
 const players = [
@@ -37,6 +36,19 @@ async function testLLM() {
     const json = await response.json();
     console.log("Response JSON:");
     console.log(JSON.stringify(json, null, 2));
+
+    // 追加 JSON 格式检查
+    if (!json || !json.data) {
+      console.error("Test failed: JSON response does not contain 'data' property.");
+      process.exit(1);
+    }
+    
+    if (typeof json.data !== 'object' || Array.isArray(json.data)) {
+      console.error("Test failed: 'data' property is not a valid object.");
+      process.exit(1);
+    }
+
+    console.log("JSON format check passed! ✅");
   } catch (error) {
     console.error("Error during fetch:", error);
     process.exit(1);
