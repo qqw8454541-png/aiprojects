@@ -24,22 +24,38 @@ PAYLOAD=$(cat <<EOF
 EOF
 )
 
-# Perform curl request and capture HTTP status code and response body
-RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$API_URL" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $API_SECRET" \
-  -d "$PAYLOAD")
+MAX_RETRIES=3
+RETRY_DELAY=10
 
-# The last line of the output is the HTTP status code, everything before is the body
-HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-BODY=$(echo "$RESPONSE" | sed '$d')
+for ((i=1; i<=MAX_RETRIES; i++)); do
+  echo "Attempt $i of $MAX_RETRIES..."
+  
+  # Perform curl request and capture HTTP status code and response body
+  RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$API_URL" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $API_SECRET" \
+    -d "$PAYLOAD")
 
-echo "Status Code: $HTTP_CODE"
+  # The last line of the output is the HTTP status code, everything before is the body
+  HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+  BODY=$(echo "$RESPONSE" | sed '$d')
 
-if [ "$HTTP_CODE" -ne 200 ]; then
+  echo "Status Code: $HTTP_CODE"
+
+  if [ "$HTTP_CODE" -eq 200 ]; then
+    break
+  fi
+
   echo "Error response text: $BODY"
-  exit 1
-fi
+  
+  if [ "$i" -lt "$MAX_RETRIES" ]; then
+    echo "Request failed, retrying in $RETRY_DELAY seconds..."
+    sleep $RETRY_DELAY
+  else
+    echo "All $MAX_RETRIES attempts failed."
+    exit 1
+  fi
+done
 
 echo "Response JSON:"
 echo "$BODY" | jq .
