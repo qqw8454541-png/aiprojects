@@ -27,6 +27,7 @@ jobs:
       - name: Run API LLM Test Script
         working-directory: ./llm-web-api
         run: |
+          sudo apt-get update && sudo apt-get install -y jq
           chmod +x ./test_llm.sh
           ./test_llm.sh
 
