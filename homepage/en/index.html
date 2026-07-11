@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eastree LLC</title>
+    <meta name="description" content="Eastree LLC aims to be your IT partner through app development and system construction.">
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="../logo/logo.png">
+    <link rel="apple-touch-icon" href="../logo/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/reset.css">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <header>
+        <div class="container header-inner">
+            <a href="#" class="logo">
+                <img src="../logo/logo.png" alt="Eastree LLC">
+            </a>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#service">Service</a></li>
+                    <li><a href="#about">About Us</a></li>
+                    <li><a href="#company">Company</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </nav>
+            <div class="lang-switcher">
+                <a href="../index.html">JA</a> | <a href="#" class="active">EN</a>
+            </div>
+            <button class="hamburger">☰</button>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Eastree LLC</h1>
+            <p style="font-size: 1rem; max-width: 500px; margin: 0 auto 30px auto;">
+                Harmony between Nature and Technology.<br>
+                We create new value as an IT partner closely supporting your business.
+            </p>
+            <a href="#contact" class="btn">Contact Us</a>
+        </div>
+    </section>
+
+    <section id="service" class="container">
+        <h2 class="section-title">Service</h2>
+        <div class="service-cards">
+            <div class="card">
+                <h3 style="margin-bottom: 20px; font-size: 1.5rem; color: var(--primary-color);">Mahjong Score Calculator</h3>
+                <p>Smooth and intuitive operation. A dedicated application for Mahjong enthusiasts supporting real-time score calculation and record management.</p>
+                <div class="store-buttons">
+                    <button class="store-btn" onclick="alert('Coming soon')">App Store<br>(Coming Soon)</button>
+                    <button class="store-btn" onclick="alert('Coming soon')">Google Play<br>(Coming Soon)</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" style="background: rgba(255,255,255,0.6);">
+        <div class="container">
+            <h2 class="section-title">About Us</h2>
+            <div class="about-text">
+                <p class="about-highlight">
+                    Closer and more accessible,<br>bringing your ideas to life.
+                </p>
+                <p>
+                    Our goal is to go beyond the framework of a mere outsourcing system company and become your "IT Partner".<br><br>
+                    Short-term delivery is not our goal. We provide services with a long-term perspective, acting as your system division.<br><br>
+                    We provide support to shape your ideas, making IT solutions closer and more accessible without you feeling the hurdles.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section id="company" class="container">
+        <h2 class="section-title">Company Info</h2>
+        <table class="company-table">
+            <tr>
+                <th>Company Name</th>
+                <td>Eastree LLC</td>
+            </tr>
+            <tr>
+                <th>Representative</th>
+                <td>Gong Peiyang</td>
+            </tr>
+            <tr>
+                <th>Established</th>
+                <td>May 19, 2025</td>
+            </tr>
+            <tr>
+                <th>Address</th>
+                <td>Tsukasa Building 401, 4-23-5 Tachibana, Sumida-ku, Tokyo 131-0043</td>
+            </tr>
+        </table>
+    </section>
+
+    <section id="contact" style="background: rgba(255,255,255,0.6);">
+        <div class="container">
+            <h2 class="section-title">Contact</h2>
+            <p style="text-align: center; margin-bottom: 40px;">Please feel free to contact us<br>regarding our services or other inquiries.</p>
+            
+            <form action="https://api.web3forms.com/submit" method="POST" id="contactForm" class="contact-form">
+                <input type="hidden" name="access_key" value="6b189c7a-76c8-40b3-9885-cfb5a75aa01a">
+                <input type="hidden" name="subject" value="Contact from Website (English)">
+                <input type="hidden" name="from_name" value="Eastree LLC Website">
+                <div class="form-group">
+                    <label for="name">Name<span>*</span></label>
+                    <input type="text" id="name" name="name" required placeholder="e.g. John Doe">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email<span>*</span></label>
+                    <input type="email" id="email" name="email" required placeholder="e.g. info@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="tel">Phone</label>
+                    <input type="tel" id="tel" name="tel" placeholder="e.g. 090-1234-5678">
+                </div>
+                <div class="form-group">
+                    <label for="message">Message<span>*</span></label>
+                    <textarea id="message" name="message" rows="6" required placeholder="Please enter your message"></textarea>
+                </div>
+                <div style="text-align: center;">
+                    <button type="submit" class="btn">Submit</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="#">Home</a>
+                <a href="privacy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="tokushoho.html">Act on Specified Commercial Transactions</a>
+            </div>
+            <p>Copyright &copy; 2025 Eastree LLC All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

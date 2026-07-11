@@ -31,9 +31,11 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const formData = new FormData(contactForm);
       
+      const isEnglish = document.documentElement.lang === 'en';
+
       const submitBtn = contactForm.querySelector('button[type="submit"]');
       const originalBtnText = submitBtn.textContent;
-      submitBtn.textContent = '送信中...';
+      submitBtn.textContent = isEnglish ? 'Sending...' : '送信中...';
       submitBtn.disabled = true;
 
       try {
@@ -47,15 +49,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (data.success) {
           // 自定义成功提示
-          alert('ありがとうございます。お問い合わせを送信しました。後ほど担当者よりご連絡いたします。');
+          alert(isEnglish ? 'Thank you. Your inquiry has been sent. We will contact you shortly.' : 'ありがとうございます。お問い合わせを送信しました。後ほど担当者よりご連絡いたします。');
           contactForm.reset();
         } else {
           console.error('Error:', data);
-          alert('エラーが発生しました: ' + data.message);
+          alert(isEnglish ? 'An error occurred: ' + data.message : 'エラーが発生しました: ' + data.message);
         }
       } catch (error) {
         console.error('Network Error:', error);
-        alert('通信エラーが発生しました。もう一度お試しください。');
+        alert(isEnglish ? 'A network error occurred. Please try again.' : '通信エラーが発生しました。もう一度お試しください。');
       } finally {
         submitBtn.textContent = originalBtnText;
         submitBtn.disabled = false;

@@ -81,6 +81,29 @@ header {
   font-size: 24px;
 }
 
+.lang-switcher {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  margin-left: 20px;
+}
+
+.lang-switcher a {
+  color: var(--text-dark);
+  transition: color 0.3s;
+}
+
+.lang-switcher a:hover {
+  color: var(--primary-color);
+}
+
+.lang-switcher a.active {
+  color: var(--primary-color);
+  font-weight: 700;
+  pointer-events: none;
+}
+
 /* Sections */
 section {
   padding: 100px 0;
