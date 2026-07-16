@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useI18n } from '@/lib/i18n';
 import { useGameStore } from '@/lib/store';
 import { useAuthStore } from '@/lib/auth-store';
+import { billingService } from '@/lib/billing-service';
+import { Capacitor } from '@capacitor/core';
 
 /* ── Premium Mahjong-themed SVG Icons ──────────────────────────── */
 const MahjongContinueIcon = () => (
@@ -166,6 +168,21 @@ export default function PersonalMenuPage() {
               >
                 <span className="text-xl">⭐</span>
                 <span>{t('upgrade.upgradeToProBtn' as Parameters<typeof t>[0])}</span>
+              </button>
+            )}
+
+            {/* 购入を復元 (原生平台のみ、非 Pro ユーザー向け) */}
+            {!isPro && Capacitor.getPlatform() !== 'web' && (
+              <button
+                onClick={async () => {
+                  const restored = await billingService.restorePurchases();
+                  if (restored) {
+                    useAuthStore.getState().upgradeToPro();
+                  }
+                }}
+                className="w-full py-2.5 text-sm text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 transition-colors font-medium"
+              >
+                {t('upgrade.restore' as Parameters<typeof t>[0])}
               </button>
             )}
 

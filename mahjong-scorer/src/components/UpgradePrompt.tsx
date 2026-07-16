@@ -4,11 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useI18n } from '@/lib/i18n';
 import { useAuthStore } from '@/lib/auth-store';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { hapticSuccess } from '@/lib/haptics';
-import { supabase } from '@/lib/supabase';
 import { Capacitor } from '@capacitor/core';
 import { syncEngine } from '@/lib/sync-engine';
+import { billingService } from '@/lib/billing-service';
 
 export default function UpgradePrompt() {
   const { t, locale } = useI18n();
@@ -20,40 +20,57 @@ export default function UpgradePrompt() {
     setSyncState
   } = useAuthStore();
   const [purchasing, setPurchasing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const priceDisplay = t('upgrade.pricePro' as any);
+  // 从商店动态获取价格，未取到时 fallback 到翻译文件的硬编码价格
+  const [storePrice, setStorePrice] = useState<string | null>(null);
+  useEffect(() => {
+    if (showUpgradePrompt && billingService.isNative) {
+      const price = billingService.getLocalizedPrice();
+      if (price) setStorePrice(price);
+    }
+  }, [showUpgradePrompt]);
+
+  const isWeb = Capacitor.getPlatform() === 'web';
+  
+  let priceDisplay: React.ReactNode;
+  if (isWeb) {
+    priceDisplay = <span className="text-xl">―</span>;
+  } else if (storePrice) {
+    priceDisplay = storePrice;
+  } else {
+    priceDisplay = (
+      <span className="inline-block w-32 h-8 bg-amber-200/50 dark:bg-amber-900/50 rounded-lg animate-pulse" />
+    );
+  }
 
   const handlePurchasePro = async () => {
     setPurchasing(true);
-    
+
     try {
       const { user } = useAuthStore.getState();
-      
+
       if (!user) {
         throw new Error('You must be logged in to upgrade.');
       }
-      
-      // Update the database (RLS currently allows public update for testing)
-      // Use upsert to ensure it works even if the profile row doesn't exist yet
-      const { error } = await supabase
-        .from('profiles')
-        .upsert(
-          { 
-            user_id: user.id, 
-            tier: 'pro',
-            display_name: user.user_metadata?.name || user.user_metadata?.full_name || ''
-          },
-          { onConflict: 'user_id' }
-        );
-        
-      if (error) throw error;
-      
-      // Update the local state
+
+      // 原生平台：通过 billing SDK 发起真实购买
+      const result = await billingService.purchasePro();
+
+      if (!result.success) {
+        if (result.error === 'user_cancelled') {
+          // 用户主动取消 — 静默处理，不弹错误提示
+          return;
+        }
+        throw new Error(result.message || result.error || 'Purchase failed');
+      }
+
+      // SDK 购买成功且已验证 — 更新本地状态
       upgradeToPro();
       hapticSuccess();
-      
-      // Native sync trigger
+
+      // 原生端触发同步
       if (Capacitor.getPlatform() !== 'web') {
         setSyncState({ isSyncing: true, progress: null });
         syncEngine.fullSync((progress) => setSyncState({ progress })).then((res) => {
@@ -66,12 +83,32 @@ export default function UpgradePrompt() {
       setIsSuccess(true);
     } catch (e: any) {
       console.error('Upgrade failed:', e);
-      // We still use alert here for simplicity since this is a temporary testing backdoor
+      // TODO(security): 不要在生产环境使用 alert()，应改为框架内 Toast/Modal 组件
       alert(t('upgrade.error' as any));
     } finally {
       setPurchasing(false);
     }
   };
+
+  const handleRestore = async () => {
+    setRestoring(true);
+    try {
+      const restored = await billingService.restorePurchases();
+      if (restored) {
+        upgradeToPro();
+        hapticSuccess();
+        setIsSuccess(true);
+      } else {
+        alert(t('upgrade.restoreNone' as any));
+      }
+    } catch (e) {
+      console.error('Restore failed:', e);
+      alert(t('upgrade.restoreError' as any));
+    } finally {
+      setRestoring(false);
+    }
+  };
+
 
   if (!showUpgradePrompt) return null;
 
@@ -175,7 +212,7 @@ export default function UpgradePrompt() {
                 {priceDisplay}
               </p>
               <p className="text-xs text-zinc-500 mt-1">
-                {t('upgrade.subscription' as Parameters<typeof t>[0])}
+                {t('upgrade.subscriptionDesc' as Parameters<typeof t>[0])}
               </p>
             </div>
 
@@ -188,14 +225,23 @@ export default function UpgradePrompt() {
               ))}
             </div>
 
+            {/* Web 平台提示 */}
+            {isWeb && !isPro && (
+              <p className="text-xs text-center text-zinc-400 dark:text-zinc-500 mb-3">
+                {t('upgrade.webOnly' as Parameters<typeof t>[0])}
+              </p>
+            )}
+
             {/* Purchase Button */}
             <button
               onClick={handlePurchasePro}
-              disabled={purchasing || isPro}
+              disabled={purchasing || isPro || isWeb}
               className={`w-full py-4 rounded-2xl font-bold text-base transition-all active:scale-[0.97] ${
                 isPro
                   ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-900/20 hover:brightness-110'
+                  : isWeb
+                    ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-900/20 hover:brightness-110'
               }`}
             >
               {isPro
@@ -205,6 +251,17 @@ export default function UpgradePrompt() {
                   : (t('upgrade.buyPro' as Parameters<typeof t>[0]))
               }
             </button>
+
+            {/* Restore Purchases — App Store 审核强制要求 */}
+            {!isPro && !isWeb && (
+              <button
+                onClick={handleRestore}
+                disabled={restoring}
+                className="w-full mt-2 py-2.5 rounded-xl text-amber-600 dark:text-amber-400 font-medium text-sm hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-all"
+              >
+                {restoring ? '...' : t('upgrade.restore' as Parameters<typeof t>[0])}
+              </button>
+            )}
 
             {/* Close */}
             <button

@@ -1,4 +1,4 @@
-name: Daily LLM API Test
+name: Daily Tests
 
 on:
   schedule:
@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  run-test:
+  llm-api-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -31,6 +31,21 @@ jobs:
           chmod +x ./test_llm.sh
           ./test_llm.sh
 
+  redis-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        working-directory: ./llm-web-api
+        run: npm install
+
       - name: Run Redis Test Script
         working-directory: ./llm-web-api
         env:
@@ -38,3 +53,33 @@ jobs:
           UPSTASH_REDIS_REST_TOKEN: "gQAAAAAAAZ7AAAIgcDE5YTlkNmFhMzQ3MzI0YjZkOGE0NDRmNWEzMTc4M2RiMw"
         run: npx tsx test-redis.ts
 
+  login-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: ./mahjong-scorer
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: ./mahjong-scorer
+        run: npx playwright install --with-deps chromium
+
+      - name: Run production login smoke test
+        working-directory: ./mahjong-scorer
+        run: npx playwright test --config e2e/playwright-ci.config.ts
+
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: login-smoke-report
+          path: mahjong-scorer/e2e-ci-report/
+          retention-days: 7

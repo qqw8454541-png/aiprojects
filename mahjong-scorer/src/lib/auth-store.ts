@@ -15,7 +15,8 @@ import type { UserTier } from './billing.constants';
 import { useGameStore } from './store';
 import { claimDevice, registerDevice, collectDeviceInfo } from './device-info';
 import { Capacitor } from '@capacitor/core';
-import { syncEngine } from './sync-engine'; // We will create this
+import { syncEngine } from './sync-engine';
+import { billingService } from './billing-service';
 import { getSavedLocale, translate } from './i18n';
 
 export type AuthProvider = 'google' | 'apple' | 'email' | 'phone';
@@ -59,6 +60,7 @@ interface AuthState {
 
   // ── Credit & Tier Actions ─────────────────────────────────
   upgradeToPro: () => void;
+  downgradeToFree: () => void;
 
   // ── Init ──────────────────────────────────────────────────
   initialize: () => void;
@@ -140,6 +142,12 @@ export const useAuthStore = create<AuthState>()(
           isPro: true,
         }),
 
+      downgradeToFree: () =>
+        set({
+          tier: 'free',
+          isPro: false,
+        }),
+
       // ── Init ────────────────────────────────────────────────
 
       initialize: () => {
@@ -199,6 +207,26 @@ export const useAuthStore = create<AuthState>()(
               }
             } catch (e) {
               console.error('Device claim/sync failed on load:', e);
+            }
+
+            // 初始化付费 SDK 并监听权限变化
+            try {
+              await billingService.init();
+              // 从商店同步权限状态（用户可能在其他设备购买/取消了订阅）
+              const storeOwned = billingService.checkEntitlement();
+              if (storeOwned && !get().isPro) {
+                get().upgradeToPro();
+              }
+              // 监听后续权限变化
+              billingService.onEntitlementChanged((isEntitled) => {
+                if (isEntitled) {
+                  get().upgradeToPro();
+                } else {
+                  get().downgradeToFree();
+                }
+              });
+            } catch (e) {
+              console.error('Billing init failed on load:', e);
             }
           }
           markAuthReady(); // Session 恢复完毕，放行所有等待中的数据查询

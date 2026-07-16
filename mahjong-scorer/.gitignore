@@ -55,6 +55,7 @@ android/.kotlin/
 e2e-report/
 e2e-report.zip
 e2e-web-report/
+e2e-ci-report/
 e2e/test-results/
 test-results/
 playwright-report/

@@ -35,14 +35,23 @@ export const TIER_FEATURES: Record<UserTier, {
 
 // AI is now fully subscription based. No consumable credits.
 
-// ────────────────────────── 价格配置 ─────────────────────────
+// ────────────────────────── IAP 商品配置 ─────────────────────────
+// 商品 ID は Google Play Console / App Store Connect の設定と完全一致させること。
 
-export const PRICE_CONFIG = {
-  pro: {
-    ja: '¥200/月',
-    zh: '￥15/月',
-    en: '$1.99/mo',
-  },
-};
+export const BILLING_CONFIG = {
+  /** 月額サブスクリプション商品 ID */
+  PRODUCT_ID: 'pro_monthly',
 
+  /** RevenueCat / サーバー側の権限識別子 */
+  ENTITLEMENT_ID: 'pro',
 
+  /**
+   * サーバーサイド検証 URL（Supabase Edge Function）。
+   * 未設定 (空文字) の場合、cordova-plugin-purchase はローカル検証にフォールバックする。
+   *
+   * TODO(security): 本番リリース前に Edge Function を設定し、
+   * Google Play Developer API / App Store Server API で
+   * 購入レシートのサーバーサイド二重検証を実装すること。
+   */
+  VALIDATOR_URL: '',
+} as const;
