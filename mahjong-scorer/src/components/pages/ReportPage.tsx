@@ -271,6 +271,8 @@ export default function ReportPage() {
         <div className="space-y-3 relative z-10">
           {sortedPlayers.map(([playerId, pt], idx) => {
             const playerName = playerNamesMap[playerId] ?? '?';
+            const playerObj = players.find(p => p.id === playerId);
+            const avatarSeed = playerObj?.avatarSeed ?? playerId;
             // Rank badge colors for cross-platform support (medal emojis may not render on Android)
             const rankBadgeColor = idx === 0 ? 'bg-amber-500 text-white' : idx === 1 ? 'bg-zinc-400 text-white' : idx === 2 ? 'bg-orange-700 text-white' : 'bg-zinc-600 text-white';
             return (
@@ -281,7 +283,7 @@ export default function ReportPage() {
                       {idx + 1}
                     </div>
                     <div className="flex items-center gap-2">
-                      <Avatar seed={playerId} size={28} />
+                      <Avatar seed={avatarSeed} size={28} />
                       <div className="font-medium text-zinc-900 dark:text-zinc-200 text-lg">{playerName}</div>
                     </div>
                   </div>
