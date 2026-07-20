@@ -277,14 +277,21 @@ class SupabaseRoomRepository implements IRoomRepository {
 
 class SupabaseSessionRepository implements ISessionRepository {
   async list(deviceId: string, savedRoomId?: string): Promise<DbCompletedSession[]> {
-    // The outer shell delegates the entire body to withRetry;
-    // the inner 'sessions' variable is populated inside and returned.
     return withRetry(async () => {
       await authReady;
       const { user, isPro } = useAuthStore.getState();
+
+      // Single nested query: fetch sessions with players, rounds, and round results in one request
       let query = supabase
         .from('completed_sessions')
-        .select('*');
+        .select(`
+          *,
+          session_players (*),
+          session_rounds (
+            *,
+            round_player_results (*)
+          )
+        `);
 
       if (user && isPro) {
         const deviceIds = await listUserDeviceIds(user.id);
@@ -306,51 +313,38 @@ class SupabaseSessionRepository implements ISessionRepository {
       const { data, error } = await query;
       if (error) throw error;
 
-      const sessions: DbCompletedSession[] = [];
-      for (const row of data ?? []) {
-        // Fetch session players
-        const { data: playersData } = await supabase
-          .from('session_players')
-          .select('*')
-          .eq('session_id', row.id)
-          .order('seat_index', { ascending: true });
+      return (data ?? []).map((row: any) => {
+        // Sort and map session_players
+        const sessionPlayers = (row.session_players ?? [])
+          .sort((a: any, b: any) => (a.seat_index ?? 0) - (b.seat_index ?? 0));
 
-        // Fetch session rounds with nested results
-        const { data: roundsData } = await supabase
-          .from('session_rounds')
-          .select('*')
-          .eq('session_id', row.id)
-          .order('round_number', { ascending: true });
-
-        const sessionRounds: DbSessionRound[] = [];
-        for (const rd of roundsData ?? []) {
-          const { data: resultsData } = await supabase
-            .from('round_player_results')
-            .select('*')
-            .eq('round_id', rd.id)
-            .order('rank', { ascending: true });
-
-          sessionRounds.push({
+        // Sort and map session_rounds with nested results
+        const sessionRounds: DbSessionRound[] = (row.session_rounds ?? [])
+          .sort((a: any, b: any) => a.round_number - b.round_number)
+          .map((rd: any) => ({
             ...rd,
             start_time: Number(rd.start_time),
             end_time: rd.end_time ? Number(rd.end_time) : undefined,
-            results: (resultsData ?? []).map((r) => ({
-              ...r,
-              pt: Number(r.pt),
-            })),
-          });
-        }
+            results: (rd.round_player_results ?? [])
+              .sort((a: any, b: any) => a.rank - b.rank)
+              .map((r: any) => ({
+                ...r,
+                pt: Number(r.pt),
+              })),
+          }));
 
-        sessions.push({
-          ...row,
+        // Clean up the nested keys from the row
+        const { session_players, session_rounds, ...sessionBase } = row;
+
+        return {
+          ...sessionBase,
           sessionRounds,
-          sessionPlayers: playersData ?? [],
-        });
-      }
-
-      return sessions;
+          sessionPlayers,
+        } as DbCompletedSession;
+      });
     });
   }
+
 
   async insert(
     session: Omit<DbCompletedSession, 'id' | 'played_at'>

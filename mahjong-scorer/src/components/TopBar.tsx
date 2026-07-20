@@ -47,6 +47,8 @@ export default function TopBar() {
       backAction = () => setPage('landing');
     } else if (currentPage === 'manage-rooms') {
       backAction = () => setPage('personal-menu');
+    } else if (currentPage === 'member-stats') {
+      backAction = () => setPage('manage-rooms');
     } else if (currentPage === 'room-history') {
       backAction = () => setPage('manage-rooms');
     } else if (currentPage === 'create') {
@@ -121,6 +123,8 @@ export default function TopBar() {
       Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('profile.title')}</h1>;
     } else if (currentPage === 'manage-rooms') {
       Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('manage.title')}</h1>;
+    } else if (currentPage === 'member-stats') {
+      Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('memberStats.title' as any)}</h1>;
     } else if (currentPage === 'room-history') {
       Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('history.title')}</h1>;
     }

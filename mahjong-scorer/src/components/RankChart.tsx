@@ -47,7 +47,7 @@ export default function RankChart({ rounds, sortedPlayers, playerNamesMap, playe
       return { playerId, color, points, finalRank: playerIndex + 1 };
     }).filter(line => !playerId || line.playerId === playerId);
     
-    return { lines, numRounds: validRounds.length };
+    return { lines, numRounds: validRounds.length, validRounds };
   }, [rounds, sortedPlayers, playerId]);
 
   if (chartData.numRounds === 0) return null;
@@ -66,8 +66,8 @@ export default function RankChart({ rounds, sortedPlayers, playerNamesMap, playe
     return padding.left + (index / (chartData.numRounds - 1)) * innerWidth;
   };
   
-  // Y scale: rank 1 to 4 (or 3 for Sanma)
-  const maxRank = sortedPlayers.length; // 3 or 4
+  // Y scale: rank 1 to maxRank (usually 4 or 3)
+  const maxRank = Math.max(4, ...chartData.validRounds.map(r => r.results?.length || 4));
   const getY = (rank: number) => {
     // rank 1 is at top (padding.top), rank maxRank is at bottom (padding.top + innerHeight)
     if (maxRank <= 1) return padding.top + innerHeight / 2;

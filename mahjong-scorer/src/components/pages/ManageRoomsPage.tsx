@@ -271,6 +271,10 @@ export default function ManageRoomsPage() {
                   setEditMemberAvatar(m.avatar_seed);
                 }}
                 onDelete={(skipConfirm) => handleDeleteMember(m.id, skipConfirm)}
+                onViewStats={() => {
+                  useGameStore.getState().setViewingMemberId(m.id);
+                  setPage('member-stats');
+                }}
               />
             ))}
           </div>
@@ -344,12 +348,15 @@ export default function ManageRoomsPage() {
 function MemberItem({ 
   member, 
   onEdit, 
-  onDelete 
+  onDelete,
+  onViewStats
 }: { 
   member: DbSavedMember; 
   onEdit: () => void; 
   onDelete: (skipConfirm?: boolean) => void;
+  onViewStats: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <SwipeableItem
       onDelete={onDelete}
@@ -363,16 +370,24 @@ function MemberItem({
           <div className="text-[10px] text-zinc-400 font-mono">#{member.id.substring(0, 8)}</div>
         </div>
       </div>
-      <div className="flex items-center text-zinc-300 dark:text-zinc-600 pointer-events-none gap-2">
-        <div className="flex flex-col items-end opacity-60">
-          <span className="text-[9px] uppercase font-bold">Hold Edit</span>
-          <span className="text-[9px] uppercase font-bold">&larr; Delete</span>
+      <div className="flex items-center gap-3">
+        <button 
+          onClick={(e) => { e.stopPropagation(); onViewStats(); }}
+          className="px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-bold border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+        >
+          📊 {t('memberStats.viewStats' as any)}
+        </button>
+        <div className="flex items-center text-zinc-300 dark:text-zinc-600 pointer-events-none gap-2">
+          <div className="flex flex-col items-end opacity-60">
+            <span className="text-[9px] uppercase font-bold">Hold Edit</span>
+            <span className="text-[9px] uppercase font-bold">&larr; Delete</span>
+          </div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="1" />
+            <circle cx="12" cy="5" r="1" />
+            <circle cx="12" cy="19" r="1" />
+          </svg>
         </div>
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="1" />
-          <circle cx="12" cy="5" r="1" />
-          <circle cx="12" cy="19" r="1" />
-        </svg>
       </div>
     </SwipeableItem>
   );

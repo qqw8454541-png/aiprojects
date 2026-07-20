@@ -34,7 +34,7 @@ export const translations = {
     'personal.savedRooms': '保存済みルーム',
     'personal.savedRoomsDesc': '登録メンバーで素早く開始',
     'personal.manageRooms': 'ルームを管理',
-    'personal.manageRoomsDesc': 'メンバー編集・戦績確認',
+    'personal.manageRoomsDesc': 'メンバー編集・詳細な個人戦績確認',
 
     // Home
     'home.createRoom': '対局を作成',
@@ -186,6 +186,20 @@ export const translations = {
     'manage.saveChanges': '変更を保存',
     'manage.duplicateRoomName': '同じ名前のルームが既に存在します！',
 
+    // Member Stats
+    'memberStats.title': '個人データ',
+    'memberStats.ptRank': 'PT順位',
+    'memberStats.totalPt': '純PT合計',
+    'memberStats.totalGames': '総対局数',
+    'memberStats.highScore': '最高点',
+    'memberStats.lowScore': '最低点',
+    'memberStats.avgScore': '平均点',
+    'memberStats.rankCount': '着順分布',
+    'memberStats.recentTrend': '最近10局',
+    'memberStats.matchHistory': '最近対局',
+    'memberStats.noData': 'まだ対局データがありません',
+    'memberStats.viewStats': '個人データ',
+
     // History page
     'history.title': '過去の対局',
     'history.noSessions': '記録された対局がありません',
@@ -315,7 +329,7 @@ export const translations = {
     'personal.savedRooms': '已存档房间',
     'personal.savedRoomsDesc': '快速载入常用成员',
     'personal.manageRooms': '管理房间',
-    'personal.manageRoomsDesc': '编辑成员 · 查看战绩',
+    'personal.manageRoomsDesc': '编辑成员 · 查看详细个人战绩',
 
     // Home
     'home.createRoom': '创建对局',
@@ -467,6 +481,20 @@ export const translations = {
     'manage.saveChanges': '保存更改',
     'manage.duplicateRoomName': '已有同名房间，请修改名称！',
 
+    // Member Stats
+    'memberStats.title': '个人数据',
+    'memberStats.ptRank': 'PT排名',
+    'memberStats.totalPt': '纯PT总和',
+    'memberStats.totalGames': '总对局数',
+    'memberStats.highScore': '最高分',
+    'memberStats.lowScore': '最低分',
+    'memberStats.avgScore': '平均分',
+    'memberStats.rankCount': '排名分布',
+    'memberStats.recentTrend': '最近10局',
+    'memberStats.matchHistory': '最近对局',
+    'memberStats.noData': '暂无对局数据',
+    'memberStats.viewStats': '个人数据',
+
     // History page
     'history.title': '以往战绩',
     'history.noSessions': '暂无对局记录',
@@ -596,7 +624,7 @@ export const translations = {
     'personal.savedRooms': 'Saved Rooms',
     'personal.savedRoomsDesc': 'Quickly start with saved members',
     'personal.manageRooms': 'Manage Rooms',
-    'personal.manageRoomsDesc': 'Edit members & view history',
+    'personal.manageRoomsDesc': 'Edit members & view detailed stats',
 
     // Home
     'home.createRoom': 'Create Game',
@@ -747,6 +775,20 @@ export const translations = {
     'manage.viewHistory': 'View History',
     'manage.saveChanges': 'Save Changes',
     'manage.duplicateRoomName': 'A room with this name already exists!',
+
+    // Member Stats
+    'memberStats.title': 'Player Stats',
+    'memberStats.ptRank': 'PT Rank',
+    'memberStats.totalPt': 'Total PT',
+    'memberStats.totalGames': 'Games',
+    'memberStats.highScore': 'High Score',
+    'memberStats.lowScore': 'Low Score',
+    'memberStats.avgScore': 'Avg Score',
+    'memberStats.rankCount': 'Rank Distribution',
+    'memberStats.recentTrend': 'Recent 10',
+    'memberStats.matchHistory': 'Recent Matches',
+    'memberStats.noData': 'No match data yet',
+    'memberStats.viewStats': 'Stats',
 
     // History page
     'history.title': 'Match History',

@@ -50,7 +50,8 @@ export type AppPage =
   | 'saved-rooms'
   | 'manage-rooms'
   | 'room-history'
-  | 'profile';
+  | 'profile'
+  | 'member-stats';
 
 // ────────────────────────── State Interface ─────────────────────
 
@@ -79,6 +80,9 @@ interface GameState {
 
   // Track current active session ID in db to prevent duplicate history records
   currentSessionDbId: string | null;
+
+  // Member stats viewing
+  viewingMemberId: string | null;
 
   // ── Actions ──────────────────────────────────────────────────
 
@@ -120,6 +124,9 @@ interface GameState {
 
   // Manage history page
   setViewingHistoryRoomId: (id: string | null) => void;
+
+  // Member stats
+  setViewingMemberId: (id: string | null) => void;
 }
 
 // ────────────────────────── Helpers ────────────────────────────
@@ -173,6 +180,7 @@ export const useGameStore = create<GameState>()(
       viewingHistoryRoomId: null,
       sessionSavedRoomId: null,
       currentSessionDbId: null,
+      viewingMemberId: null,
 
       // ── Navigation ──────────────────────────────────────────
 
@@ -553,6 +561,8 @@ export const useGameStore = create<GameState>()(
       },
 
       setViewingHistoryRoomId: (id) => set({ viewingHistoryRoomId: id }),
+
+      setViewingMemberId: (id) => set({ viewingMemberId: id }),
     }),
     {
       name: 'mahjong-scorer-storage',

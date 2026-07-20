@@ -15,7 +15,7 @@ export default function SwipeableItem({
   onDelete, 
   onEdit, 
   className = '',
-  bgClassName = 'bg-red-500 shadow-sm border border-red-500/50'
+  bgClassName = 'bg-red-500 shadow-sm'
 }: SwipeableItemProps) {
   const controls = useAnimation();
   const x = useMotionValue(0);
