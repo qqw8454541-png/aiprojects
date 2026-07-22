@@ -192,8 +192,7 @@ class LocalMemberRepository implements IMemberRepository {
   async list(deviceId: string): Promise<DbSavedMember[]> {
     const db = await getDb();
     const res = await db.query(
-      `SELECT * FROM saved_members WHERE device_id = ? AND deleted_at IS NULL AND avatar_seed != '__DELETED__' ORDER BY created_at DESC`,
-      [deviceId]
+      `SELECT * FROM saved_members WHERE deleted_at IS NULL AND avatar_seed != '__DELETED__' ORDER BY created_at DESC`
     );
     return res.values ?? [];
   }
@@ -257,8 +256,7 @@ class LocalRoomRepository implements IRoomRepository {
   async list(deviceId: string): Promise<DbSavedRoom[]> {
     const db = await getDb();
     const res = await db.query(
-      `SELECT * FROM saved_rooms WHERE device_id = ? AND deleted_at IS NULL ORDER BY updated_at DESC`,
-      [deviceId]
+      `SELECT * FROM saved_rooms WHERE deleted_at IS NULL ORDER BY updated_at DESC`
     );
     const rooms: DbSavedRoom[] = [];
     for (const row of res.values ?? []) {
@@ -339,11 +337,11 @@ class LocalRoomRepository implements IRoomRepository {
 class LocalSessionRepository implements ISessionRepository {
   async list(deviceId: string, savedRoomId?: string): Promise<DbCompletedSession[]> {
     const db = await getDb();
-    let sql = `SELECT * FROM completed_sessions WHERE device_id = ?`;
-    const params: unknown[] = [deviceId];
+    let sql = `SELECT * FROM completed_sessions`;
+    const params: unknown[] = [];
 
     if (savedRoomId) {
-      sql += ` AND saved_room_id = ?`;
+      sql += ` WHERE saved_room_id = ?`;
       params.push(savedRoomId);
     }
     sql += ` ORDER BY played_at DESC`;

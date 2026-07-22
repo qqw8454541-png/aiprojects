@@ -144,10 +144,10 @@ export default function TopBar() {
 
   return (
     <header 
-      className={`fixed top-0 left-0 right-0 z-50 safe-area-pt transition-all duration-300
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300
         ${isScrolled 
-          ? 'glass-header border-b border-zinc-200 dark:border-zinc-800 shadow-sm py-2 px-4' 
-          : 'bg-transparent border-transparent py-4 px-4'}
+          ? 'glass-header border-b border-zinc-200 dark:border-zinc-800 shadow-sm px-4 pb-2 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)]' 
+          : 'bg-transparent border-transparent px-4 pb-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)]'}
       `}
     >
       <div className="flex justify-between items-center max-w-lg mx-auto w-full">

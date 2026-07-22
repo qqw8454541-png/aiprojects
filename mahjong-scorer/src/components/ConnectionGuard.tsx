@@ -98,7 +98,7 @@ export default function ConnectionGuard() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -40 }}
           transition={{ duration: 0.3 }}
-          className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-center gap-2 bg-amber-500/95 text-white text-sm font-medium py-2 px-4 backdrop-blur-sm safe-area-pt"
+          className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-center gap-2 bg-amber-500/95 text-white text-sm font-medium pb-2 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)] px-4 backdrop-blur-sm"
         >
           <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
           <span>{t('connection.recovering' as Parameters<typeof t>[0]) || '正在恢复连接...'}</span>
@@ -113,7 +113,7 @@ export default function ConnectionGuard() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -40 }}
           transition={{ duration: 0.3 }}
-          className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-center gap-3 bg-red-500/95 text-white text-sm font-medium py-2.5 px-4 backdrop-blur-sm safe-area-pt"
+          className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-center gap-3 bg-red-500/95 text-white text-sm font-medium pb-2.5 pt-[calc(env(safe-area-inset-top,0px)+0.625rem)] px-4 backdrop-blur-sm"
         >
           <span>{t('connection.failed' as Parameters<typeof t>[0]) || '连接已断开'}</span>
           <button
@@ -139,7 +139,7 @@ export default function ConnectionGuard() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -40 }}
           transition={{ duration: 0.3 }}
-          className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-center gap-3 bg-orange-500/95 text-white text-sm font-medium py-2.5 px-4 backdrop-blur-sm safe-area-pt"
+          className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-center gap-3 bg-orange-500/95 text-white text-sm font-medium pb-2.5 pt-[calc(env(safe-area-inset-top,0px)+0.625rem)] px-4 backdrop-blur-sm"
         >
           <span>{t('connection.sessionExpiring' as Parameters<typeof t>[0]) || '会话即将过期，请操作以保持在线'}</span>
         </motion.div>

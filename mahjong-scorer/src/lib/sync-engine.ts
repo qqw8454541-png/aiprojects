@@ -69,8 +69,8 @@ class SyncEngine {
       // 2. Uploading
       onProgress({ phase: 'uploading', current: currentStep, total: totalSteps, message: 'Uploading members...' });
       
-      for (const m of localMembers) {
-        await supabase.from('saved_members').upsert({
+      if (localMembers.length > 0) {
+        const payload = localMembers.map((m: any) => ({
           id: m.id,
           device_id: m.device_id,
           name: m.name,
@@ -78,14 +78,15 @@ class SyncEngine {
           created_at: m.created_at,
           updated_at: m.updated_at,
           deleted_at: m.deleted_at
-        }, { onConflict: 'id' });
-        currentStep++;
+        }));
+        await supabase.from('saved_members').upsert(payload, { onConflict: 'id' });
+        currentStep += localMembers.length;
         onProgress({ phase: 'uploading', current: currentStep, total: totalSteps, message: `Uploading members...` });
       }
 
       onProgress({ phase: 'uploading', current: currentStep, total: totalSteps, message: 'Uploading rooms...' });
-      for (const r of localRooms) {
-        await supabase.from('saved_rooms').upsert({
+      if (localRooms.length > 0) {
+        const payload = localRooms.map((r: any) => ({
           id: r.id,
           device_id: r.device_id,
           name: r.name,
@@ -93,18 +94,21 @@ class SyncEngine {
           created_at: r.created_at,
           updated_at: r.updated_at,
           deleted_at: r.deleted_at
-        }, { onConflict: 'id' });
+        }));
+        await supabase.from('saved_rooms').upsert(payload, { onConflict: 'id' });
         
-        if (r.members && r.members.length > 0) {
-          await supabase.from('room_members').delete().eq('room_id', r.id);
-          const rmRows = r.members.map((m: any, i: number) => ({
-            room_id: r.id,
-            member_id: m.id,
-            sort_order: i
-          }));
-          await supabase.from('room_members').insert(rmRows);
+        for (const r of localRooms) {
+          if (r.members && r.members.length > 0) {
+            await supabase.from('room_members').delete().eq('room_id', r.id);
+            const rmRows = r.members.map((m: any, i: number) => ({
+              room_id: r.id,
+              member_id: m.id,
+              sort_order: i
+            }));
+            await supabase.from('room_members').insert(rmRows);
+          }
         }
-        currentStep++;
+        currentStep += localRooms.length;
         onProgress({ phase: 'uploading', current: currentStep, total: totalSteps, message: `Uploading rooms...` });
       }
 
@@ -214,24 +218,28 @@ class SyncEngine {
       const localSessions = await localRepo.exportAllSessions();
 
       const membersToPush = localMembers.filter((m: any) => m.updated_at > lastSynced);
-      for (const m of membersToPush) {
-        await supabase.from('saved_members').upsert({
+      if (membersToPush.length > 0) {
+        const payload = membersToPush.map((m: any) => ({
           id: m.id, device_id: m.device_id, name: m.name, avatar_seed: m.avatar_seed,
           created_at: m.created_at, updated_at: m.updated_at, deleted_at: m.deleted_at
-        }, { onConflict: 'id' });
+        }));
+        await supabase.from('saved_members').upsert(payload, { onConflict: 'id' });
       }
 
       const roomsToPush = localRooms.filter((r: any) => r.updated_at > lastSynced);
-      for (const r of roomsToPush) {
-        await supabase.from('saved_rooms').upsert({
+      if (roomsToPush.length > 0) {
+        const payload = roomsToPush.map((r: any) => ({
           id: r.id, device_id: r.device_id, name: r.name, rules: r.rules,
           created_at: r.created_at, updated_at: r.updated_at, deleted_at: r.deleted_at
-        }, { onConflict: 'id' });
+        }));
+        await supabase.from('saved_rooms').upsert(payload, { onConflict: 'id' });
         
-        if (r.members) {
-          await supabase.from('room_members').delete().eq('room_id', r.id);
-          const rmRows = r.members.map((m: any, i: number) => ({ room_id: r.id, member_id: m.id, sort_order: i }));
-          if (rmRows.length > 0) await supabase.from('room_members').insert(rmRows);
+        for (const r of roomsToPush) {
+          if (r.members) {
+            await supabase.from('room_members').delete().eq('room_id', r.id);
+            const rmRows = r.members.map((m: any, i: number) => ({ room_id: r.id, member_id: m.id, sort_order: i }));
+            if (rmRows.length > 0) await supabase.from('room_members').insert(rmRows);
+          }
         }
       }
 
