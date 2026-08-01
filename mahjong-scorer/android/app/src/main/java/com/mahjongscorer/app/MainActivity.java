@@ -15,6 +15,10 @@ public class MainActivity extends BridgeActivity {
             // Force hardware-accelerated rendering layer for backdrop-filter / blur CSS
             getBridge().getWebView().setLayerType(View.LAYER_TYPE_HARDWARE, null);
 
+            // Disable native Android overscroll glow / rubber-band effect.
+            // Without this, pulling past scroll boundaries shifts content under the fixed header.
+            getBridge().getWebView().setOverScrollMode(View.OVER_SCROLL_NEVER);
+
             // Disable WebView algorithmic darkening — we handle dark mode via CSS (Tailwind dark:)
             try {
                 if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {

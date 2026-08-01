@@ -27,8 +27,8 @@
     "@capacitor/status-bar": "^8.0.2",
     "@dicebear/collection": "^9.4.2",
     "@dicebear/core": "^9.4.2",
-    "cordova-plugin-purchase": "^13.17.2",
     "@supabase/supabase-js": "^2.101.1",
+    "cordova-plugin-purchase": "^13.17.2",
     "framer-motion": "^12.38.0",
     "html-to-image": "^1.11.13",
     "lucide-react": "^0.577.0",
@@ -50,6 +50,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.7",
     "playwright": "^1.60.0",
+    "sharp": "^0.35.3",
     "supabase": "^2.95.6",
     "tailwindcss": "^4",
     "typescript": "^5"

@@ -38,6 +38,25 @@ function build_web() {
     node scripts/strip-lab-colors.mjs
 }
 
+function build_aab() {
+    local target="${1:-bundleRelease}"
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${YELLOW}[4/4] Building Android App Bundle (AAB - ${target}) via Gradle...${NC}"
+    echo -e "${BLUE}========================================${NC}"
+    cd android
+    ./gradlew "${target}"
+    cd ..
+
+    echo -e "${GREEN}========================================${NC}"
+    echo -e "${GREEN}AAB Build Completed Successfully!${NC}"
+    if [ "${target}" = "bundleRelease" ]; then
+        echo -e "${GREEN}AAB file is located at:${NC} android/app/build/outputs/bundle/release/app-release.aab"
+    else
+        echo -e "${GREEN}AAB file is located at:${NC} android/app/build/outputs/bundle/debug/app-debug.aab"
+    fi
+    echo -e "${GREEN}========================================${NC}"
+}
+
 function build_apk() {
     echo -e "${BLUE}========================================${NC}"
     echo -e "${YELLOW}[4/4] Building Android APK via Gradle...${NC}"
@@ -74,6 +93,18 @@ function run_sync() {
     build_apk
 }
 
+function run_aab() {
+    local target="${1:-bundleRelease}"
+    build_web
+
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${YELLOW}[3/4] Syncing Capacitor Plugins and Web Assets...${NC}"
+    echo -e "${BLUE}========================================${NC}"
+    npx cap sync android
+
+    build_aab "${target}"
+}
+
 check_prerequisites
 
 case "$1" in
@@ -85,9 +116,19 @@ case "$1" in
         echo -e "${GREEN}>>> Starting APK Build (Full Plugin Sync)...${NC}"
         run_sync
         ;;
+    aab|abb)
+        echo -e "${GREEN}>>> Starting AAB Release Bundle Build for Google Play...${NC}"
+        run_aab "bundleRelease"
+        ;;
+    aab:debug)
+        echo -e "${GREEN}>>> Starting AAB Debug Bundle Build for Google Play...${NC}"
+        run_aab "bundleDebug"
+        ;;
     *)
-        echo -e "${YELLOW}Usage: $0 {only|sync}${NC}"
-        echo -e "  ${BLUE}only${NC} : 只编译前端网页代码并复制到 Android 目录，然后打出 APK (速度较快)"
-        echo -e "  ${BLUE}sync${NC} : 完整编译，包含同步原生 Capacitor 插件及配置，然后打出 APK (添加新插件时使用)"
+        echo -e "${YELLOW}Usage: $0 {only|sync|aab|aab:debug}${NC}"
+        echo -e "  ${BLUE}only${NC}      : 只编译前端网页代码并复制到 Android 目录，然后打出 debug APK (速度较快)"
+        echo -e "  ${BLUE}sync${NC}      : 完整编译，包含同步原生 Capacitor 插件及配置，然后打出 debug APK"
+        echo -e "  ${BLUE}aab${NC}       : 完整编译并生成用于 Google Play 提交的 Release AAB 包 (bundleRelease)"
+        echo -e "  ${BLUE}aab:debug${NC} : 完整编译并生成用于 Google Play 测试的 Debug AAB 包 (bundleDebug)"
         exit 1
 esac
