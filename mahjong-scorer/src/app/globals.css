@@ -195,15 +195,14 @@ input[type='number'] {
   padding-right: env(safe-area-inset-right, 0px);
 }
 
-html,
+html {
+  overscroll-behavior: none;
+  overflow-y: scroll;          /* always allow vertical scroll but never overscroll */
+}
+
 body {
   font-family: var(--font-sans);
   overscroll-behavior: none;
-  overflow-x: hidden;          /* prevent horizontal overscroll on Android WebView */
-}
-
-html {
-  overflow-y: scroll;          /* always allow vertical scroll but never overscroll */
 }
 
 /* ===== Glass-effect utilities with Android WebView fallback ===== */

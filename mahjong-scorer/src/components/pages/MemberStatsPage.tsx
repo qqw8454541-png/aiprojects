@@ -455,7 +455,7 @@ export default function MemberStatsPage() {
   }
 
   return (
-    <div className="h-dvh overflow-y-auto pt-24 px-4 pb-8 page-enter space-y-4">
+    <div className="min-h-dvh pt-24 px-4 pb-8 page-enter space-y-4">
       
 
 

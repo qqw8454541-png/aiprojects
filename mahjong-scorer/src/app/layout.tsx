@@ -62,7 +62,9 @@ export default function RootLayout({
               <AuthModal />
               <UpgradePrompt />
               <SyncScreen />
-              {children}
+              <div className="overflow-x-hidden w-full flex flex-col min-h-dvh">
+                {children}
+              </div>
             </SyncProvider>
           </I18nProvider>
         </ThemeProviders>

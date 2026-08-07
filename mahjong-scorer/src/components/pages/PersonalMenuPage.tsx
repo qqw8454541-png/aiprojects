@@ -69,16 +69,7 @@ export default function PersonalMenuPage() {
       color: 'from-indigo-500 to-blue-500 dark:from-indigo-600 dark:to-blue-600',
       shadow: 'shadow-indigo-900/20',
       textColor: 'text-white',
-    },
-    {
-      page: 'manage-rooms' as const,
-      icon: '⚙️',
-      label: 'personal.manageRooms' as any,
-      desc: 'personal.manageRoomsDesc' as any,
-      color: 'from-zinc-200 to-zinc-300 dark:from-zinc-600 dark:to-zinc-700',
-      shadow: 'shadow-zinc-300/50 dark:shadow-zinc-900/20',
-      textColor: 'text-zinc-800 dark:text-zinc-100',
-    },
+    }
   ];
 
   return (
