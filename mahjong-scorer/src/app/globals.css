@@ -195,6 +195,10 @@ input[type='number'] {
   padding-right: env(safe-area-inset-right, 0px);
 }
 
+.pt-safe-24 {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 6rem);
+}
+
 html {
   overscroll-behavior: none;
   overflow-y: scroll;          /* always allow vertical scroll but never overscroll */
