@@ -70,7 +70,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="flex flex-col min-h-dvh pt-24 px-5 page-enter pb-10">
+    <div className="flex flex-col min-h-dvh pt-safe-24 px-5 page-enter pb-10">
       <div className="max-w-md w-full mx-auto space-y-6">
         
         {/* 头像与概览区 */}

@@ -12,6 +12,14 @@ import { calculateEvaluationPoint } from '@/lib/evaluation-point';
 import { HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { toPng } from 'html-to-image';
+import { QRCodeSVG } from 'qrcode.react';
+import { useTheme } from 'next-themes';
+import { Loader2 } from 'lucide-react';
+
 // ── UI Components ──────────────────────────────────────────────
 
 function Tooltip({ content, children, align = 'center' }: { content: string, children: React.ReactNode, align?: 'left' | 'center' | 'right' }) {
@@ -308,6 +316,11 @@ export default function MemberStatsPage() {
   const [gameTypeTab, setGameTypeTab] = useState<'4-player' | '3-player'>('4-player');
   const [visibleHistoryCount, setVisibleHistoryCount] = useState(10);
 
+  const { theme } = useTheme();
+  const [isGenerating, setIsGenerating] = useState(true);
+  const [shareFile, setShareFile] = useState<File | null>(null);
+  const [dataUrl, setDataUrl] = useState<string | null>(null);
+
   useEffect(() => {
     if (!deviceId || !viewingMemberId) {
       setLoading(false);
@@ -336,6 +349,114 @@ export default function MemberStatsPage() {
       }
     })();
   }, [deviceId, viewingMemberId, authIsPro, user?.id]);
+
+  function dataURItoBlob(dataURI: string) {
+    const [header, base64] = dataURI.split(',');
+    const mimeStr = header.split(':')[1].split(';')[0];
+    const byteStr = atob(base64);
+    const ab = new ArrayBuffer(byteStr.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteStr.length; i++) {
+        ia[i] = byteStr.charCodeAt(i);
+    }
+    return new Blob([ab], { type: mimeStr });
+  }
+
+  useEffect(() => {
+    if (loading || !member) return;
+
+    let mounted = true;
+    setIsGenerating(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const elExport = document.getElementById('member-stats-export');
+        if (!elExport) return;
+        
+        const isDark = theme === 'dark' || document.documentElement.classList.contains('dark');
+        const opts = { 
+          cacheBust: true, 
+          backgroundColor: isDark ? '#18181b' : '#ffffff',
+          pixelRatio: 2,
+          style: { transform: 'scale(1)', transformOrigin: 'top left', margin: '0' }
+        };
+        
+        const url = await toPng(elExport, { ...opts, width: elExport.offsetWidth, height: elExport.offsetHeight });
+        
+        if (!mounted) return;
+        
+        const dateStr = new Date().toISOString().slice(0,10);
+        const blob = dataURItoBlob(url);
+        const file = new File([blob], `mahjong-stats-${member.name}-${dateStr}.png`, { type: 'image/png' });
+        
+        setShareFile(file);
+        setDataUrl(url);
+      } catch (err) {
+        console.error('Background generation failed', err);
+      } finally {
+        if (mounted) setIsGenerating(false);
+      }
+    }, 600); // Wait 600ms for animations and fonts to settle
+
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
+  }, [loading, theme, member, gameTypeTab, evalRanks, matchHistory]);
+
+  async function handleDownload() {
+    if (!shareFile || !dataUrl) return;
+
+    const fallbackDownload = () => {
+      const link = document.createElement('a');
+      link.download = shareFile.name;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const base64Data = dataUrl.split(',')[1];
+        const filename = `mahjong-stats-${Date.now()}.png`;
+        
+        const savedFile = await Filesystem.writeFile({
+          path: filename,
+          data: base64Data,
+          directory: Directory.Cache
+        });
+
+        await Share.share({
+          title: t('result.downloadImage' as Parameters<typeof t>[0]),
+          text: t('app.title' as Parameters<typeof t>[0]),
+          url: savedFile.uri,
+          dialogTitle: t('result.downloadImage' as Parameters<typeof t>[0]),
+        });
+      } catch (err) {
+        console.error('Capacitor share failed', err);
+        fallbackDownload();
+      }
+      return;
+    }
+
+    if (navigator.share) {
+      if (navigator.canShare && !navigator.canShare({ files: [shareFile] })) {
+        fallbackDownload();
+        return;
+      }
+      
+      navigator.share({
+        files: [shareFile]
+      }).catch((shareErr: any) => {
+        if (shareErr.name === 'AbortError') return;
+        console.error('iOS Share Sheet failed', shareErr);
+        fallbackDownload();
+      });
+    } else {
+      fallbackDownload();
+    }
+  }
 
   const stats = useMemo(() => {
     if (!viewingMemberId || !member) return null;
@@ -438,7 +559,7 @@ export default function MemberStatsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh pt-24 px-4 pb-8 flex flex-col items-center justify-center gap-3">
+      <div className="min-h-dvh pt-safe-24 px-4 pb-8 flex flex-col items-center justify-center gap-3">
         <div className="w-8 h-8 border-2 border-zinc-300 dark:border-zinc-600 border-t-zinc-600 dark:border-t-zinc-300 rounded-full animate-spin" />
         <span className="text-sm text-zinc-400">Loading...</span>
       </div>
@@ -447,7 +568,7 @@ export default function MemberStatsPage() {
 
   if (!member || !stats) {
     return (
-      <div className="min-h-dvh pt-24 px-4 pb-8 flex flex-col items-center justify-center text-center gap-3">
+      <div className="min-h-dvh pt-safe-24 px-4 pb-8 flex flex-col items-center justify-center text-center gap-3">
         <div className="text-5xl">📊</div>
         <p className="font-bold text-zinc-700 dark:text-zinc-300">{t('memberStats.noData' as any)}</p>
       </div>
@@ -455,7 +576,7 @@ export default function MemberStatsPage() {
   }
 
   return (
-    <div className="min-h-dvh pt-24 px-4 pb-8 page-enter space-y-4">
+    <div className="min-h-dvh pt-safe-24 px-4 pb-8 page-enter space-y-4">
       
 
 
@@ -638,7 +759,134 @@ export default function MemberStatsPage() {
           )}
         </div>
       )}
+
+      {/* Share / Download Button */}
+      <div className="mt-8 flex flex-col gap-3 w-full max-w-sm mx-auto safe-area-pb">
+        <button
+          onClick={handleDownload}
+          disabled={isGenerating || stats.isEmpty}
+          className={`w-full py-4 rounded-2xl font-bold transition-all shadow-lg flex items-center justify-center gap-2 ${
+            isGenerating || stats.isEmpty
+              ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 cursor-not-allowed shadow-none' 
+              : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:brightness-110 active:scale-95 shadow-emerald-900/40'
+          }`}
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin opacity-80" />
+              {t('result.downloadImage' as Parameters<typeof t>[0])}...
+            </>
+          ) : (
+            <>📸 {t('result.downloadImage' as Parameters<typeof t>[0])}</>
+          )}
+        </button>
+      </div>
       
+      {/* Hidden Export Template */}
+      <div className="absolute top-[-9999px] left-[-9999px] opacity-0 pointer-events-none">
+        <div id="member-stats-export" className="w-[375px] bg-white dark:bg-zinc-950 p-6 rounded-3xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-3xl rounded-full" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 blur-3xl rounded-full" />
+
+          <h1 className="text-xl font-black text-center mb-2 tracking-wider text-zinc-900 dark:text-zinc-100">{t('personal.memberManageLabel' as any)}</h1>
+          <div className="text-center text-zinc-600 dark:text-zinc-500 text-xs mb-8">
+            <div>{new Date().toLocaleDateString()} • {gameTypeTab === '4-player' ? t('memberStats.tab4Player' as any) : t('memberStats.tab3Player' as any)}</div>
+          </div>
+
+          <div className="mb-6 relative z-10">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex flex-col items-center justify-center min-w-[70px] relative">
+                <div className="flex items-center gap-1 mb-1">
+                  <span className="text-xs text-zinc-500 font-bold uppercase">{t('memberStats.ptRank' as any)}</span>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-black text-zinc-900 dark:text-zinc-100">
+                    {stats.rank > 0 ? `#${stats.rank}` : '-'}
+                  </span>
+                  {stats.rank > 0 && (
+                    <span className="text-xs text-zinc-500 font-bold whitespace-nowrap">
+                      / {stats.totalPlayers}{locale === 'zh' || locale === 'ja' ? '人' : ''}
+                    </span>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex flex-col items-center flex-1 mx-2">
+                <Avatar seed={member.avatar_seed} size={72} className="shadow-md mb-3 ring-4 ring-zinc-50 dark:ring-zinc-800" />
+                <div className="flex items-baseline gap-2">
+                  <span className="font-bold text-xl text-zinc-900 dark:text-zinc-100 truncate max-w-[180px]">{member.name}</span>
+                </div>
+              </div>
+              
+              <div className="flex flex-col items-center justify-center min-w-[70px] relative">
+                <div className="flex items-center gap-1 mb-1">
+                  <span className="text-xs text-zinc-500 font-bold uppercase">{t('memberStats.evalPoint' as any)}</span>
+                </div>
+                <span className={`text-3xl font-black ${stats.pt >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                  {stats.pt > 0 ? '+' : ''}{stats.pt.toFixed(1)}
+                </span>
+              </div>
+            </div>
+
+            {!stats.isEmpty && (
+              <>
+                <div className="grid grid-cols-4 gap-2 mb-4">
+                  <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/80">
+                    <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.totalGames' as any)}</span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.totalGames}</span>
+                  </div>
+                  <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/80">
+                    <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.highScore' as any)}</span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.maxScore}</span>
+                  </div>
+                  <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/80">
+                    <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.lowScore' as any)}</span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.minScore}</span>
+                  </div>
+                  <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/80">
+                    <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.avgScore' as any)}</span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.avgScore}</span>
+                  </div>
+                </div>
+
+                <div className={`grid gap-2 ${gameTypeTab === '4-player' ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                  {['🥇', '🥈', '🥉', '4️⃣'].slice(0, gameTypeTab === '4-player' ? 4 : 3).map((emoji, idx) => (
+                    <div key={idx} className="flex items-center justify-center gap-2 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80">
+                      <span className="text-sm">{emoji}</span>
+                      <span className="font-bold text-sm text-zinc-700 dark:text-zinc-300">{stats.rankCounts[idx]}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {!stats.isEmpty && stats.chartRounds.length > 0 && viewingMemberId && (
+            <div className="mb-6 relative z-10 pt-4">
+              <h2 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-4">{t('memberStats.recentTrend' as any)}</h2>
+              <div className="bg-zinc-50 dark:bg-zinc-900/60 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800/80">
+                <RankChart 
+                  rounds={stats.chartRounds}
+                  sortedPlayers={[[viewingMemberId, stats.pt]]}
+                  playerNamesMap={{ [viewingMemberId]: member.name }}
+                  playerId={viewingMemberId}
+                  exportMode={true}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-800/50 flex items-center justify-center gap-3 relative z-10">
+            <div className="bg-white p-1 rounded-lg">
+              <QRCodeSVG value="https://mahjong-scorer.eastree.co.jp/" size={48} level="L" includeMargin={false} />
+            </div>
+            <div className="text-left text-[10px] text-zinc-500 dark:text-zinc-500 font-mono leading-tight">
+              <p>Generated by</p>
+              <p className="font-bold text-zinc-700 dark:text-zinc-400">{t('app.title' as Parameters<typeof t>[0])}</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

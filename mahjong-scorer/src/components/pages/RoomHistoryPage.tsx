@@ -48,7 +48,7 @@ export default function RoomHistoryPage() {
   }, [deviceId, viewingHistoryRoomId]);
 
   return (
-    <div className="min-h-dvh pt-24 px-4 pb-8 page-enter">
+    <div className="min-h-dvh pt-safe-24 px-4 pb-8 page-enter">
       {loading ? (
         <div className="flex justify-center py-20 text-zinc-400">Loading...</div>
       ) : sessions.length === 0 ? (

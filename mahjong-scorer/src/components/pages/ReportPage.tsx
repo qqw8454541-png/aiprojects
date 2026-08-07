@@ -428,7 +428,7 @@ export default function ReportPage() {
   );
 
   return (
-    <div className="min-h-dvh flex flex-col p-4 pt-24 page-enter items-center">
+    <div className="min-h-dvh flex flex-col p-4 pt-safe-24 page-enter items-center">
       {/* Toggle View Mode */}
       <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-full mb-6 max-w-sm w-full mx-auto shadow-inner">
         <button

@@ -151,7 +151,7 @@ export default function ScorePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-dvh pt-24 page-enter">
+    <div className="flex flex-col min-h-dvh pt-safe-24 page-enter">
       <div className="flex justify-end px-4 pb-3">
         <button 
           onClick={() => setIsEditingRules(true)}

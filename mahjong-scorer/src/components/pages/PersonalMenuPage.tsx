@@ -73,7 +73,7 @@ export default function PersonalMenuPage() {
   ];
 
   return (
-    <div className="flex flex-col min-h-dvh pt-24 px-5 pb-8 page-enter">
+    <div className="flex flex-col min-h-dvh pt-safe-24 px-5 pb-8 page-enter">
       <div className="space-y-4">
         {items.map((item) => (
           <button

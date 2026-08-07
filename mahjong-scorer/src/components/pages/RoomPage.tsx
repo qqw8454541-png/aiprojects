@@ -108,7 +108,7 @@ export default function RoomPage() {
   };
 
   return (
-    <div className="min-h-dvh px-4 py-6 pt-24 page-enter">
+    <div className="min-h-dvh px-4 py-6 pt-safe-24 page-enter">
 
       {/* Add player - can add to bench */}
       <div className="mb-5">
