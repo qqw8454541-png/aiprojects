@@ -14,8 +14,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 // ── UI Components ──────────────────────────────────────────────
 
-function Tooltip({ content, children }: { content: string, children: React.ReactNode }) {
+function Tooltip({ content, children, align = 'center' }: { content: string, children: React.ReactNode, align?: 'left' | 'center' | 'right' }) {
   const [isOpen, setIsOpen] = useState(false);
+  
+  let alignClasses = "left-1/2 -translate-x-1/2";
+  let arrowClasses = "left-1/2 -translate-x-1/2";
+  
+  if (align === 'left') {
+    alignClasses = "left-[-8px]";
+    arrowClasses = "left-[15px] -translate-x-1/2";
+  } else if (align === 'right') {
+    alignClasses = "right-[-8px]";
+    arrowClasses = "right-[15px] translate-x-1/2";
+  }
+
   return (
     <div className="relative inline-flex items-center" 
       onMouseEnter={() => setIsOpen(true)} 
@@ -29,10 +41,10 @@ function Tooltip({ content, children }: { content: string, children: React.React
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 5 }}
-            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[11px] leading-relaxed rounded-xl shadow-xl z-50 pointer-events-none text-left"
+            className={`absolute bottom-full mb-2 w-[75vw] max-w-64 p-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[11px] leading-relaxed rounded-xl shadow-xl z-[100] pointer-events-none text-left ${alignClasses}`}
           >
             {content}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-zinc-900 dark:border-t-zinc-100" />
+            <div className={`absolute top-full -mt-1 border-4 border-transparent border-t-zinc-900 dark:border-t-zinc-100 ${arrowClasses}`} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -426,20 +438,22 @@ export default function MemberStatsPage() {
   }
 
   return (
-    <div className="min-h-dvh pt-24 px-4 pb-8 page-enter space-y-4">
+    <div className="h-dvh overflow-y-auto pt-24 px-4 pb-8 page-enter space-y-4">
       
 
 
       {/* Card 1: Overview */}
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-3xl rounded-full pointer-events-none" />
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm relative">
+        <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-3xl rounded-full" />
+        </div>
         
         {/* Top Row: Rank, Avatar/Name, PT */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex flex-col items-center justify-center min-w-[70px] relative">
             <div className="flex items-center gap-1 mb-1">
               <span className="text-xs text-zinc-500 font-bold uppercase">{t('memberStats.ptRank' as any)}</span>
-              <Tooltip content={t('memberStats.rankOf' as any)}>
+              <Tooltip content={t('memberStats.rankOf' as any)} align="left">
                 <HelpCircle className="w-3.5 h-3.5 text-zinc-400 cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors" />
               </Tooltip>
             </div>
@@ -465,7 +479,7 @@ export default function MemberStatsPage() {
           <div className="flex flex-col items-center justify-center min-w-[70px] relative">
             <div className="flex items-center gap-1 mb-1">
               <span className="text-xs text-zinc-500 font-bold uppercase">{t('memberStats.evalPoint' as any)}</span>
-              <Tooltip content={t('memberStats.evalPointTooltip' as any)}>
+              <Tooltip content={t('memberStats.evalPointTooltip' as any)} align="right">
                 <HelpCircle className="w-3.5 h-3.5 text-zinc-400 cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors" />
               </Tooltip>
             </div>
