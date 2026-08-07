@@ -35,6 +35,10 @@ export const translations = {
     'personal.savedRoomsDesc': '登録メンバーで素早く開始',
     'personal.manageRooms': 'ルームを管理',
     'personal.manageRoomsDesc': 'メンバー編集・詳細な個人戦績確認',
+    'personal.roomManageHint': '保存済みルームから すぐ開始できます',
+    'personal.memberManageHint': '個人戦績やデータは ここから確認',
+    'personal.roomManageLabel': 'ルーム管理',
+    'personal.memberManageLabel': 'メンバー管理',
 
     // Home
     'home.createRoom': '対局を作成',
@@ -135,6 +139,7 @@ export const translations = {
     'report.simpleMode': '簡潔',
     'report.detailedMode': '詳細',
     'report.rankTrend': '順位推移',
+    'report.dragHint': '← スワイプで過去の局を表示',
     'report.avgRank': '平均順位',
     'report.finalScore': '最終素点',
     'room.confirmEndTodayMatch': '対局を終了しますか？',
@@ -199,6 +204,11 @@ export const translations = {
     'memberStats.matchHistory': '最近対局',
     'memberStats.noData': 'まだ対局データがありません',
     'memberStats.viewStats': '個人データ',
+    'memberStats.rankOf': '順位は全登録メンバーの総合評価Pointに基づいています。',
+    'memberStats.evalPoint': '総合評価Point',
+    'memberStats.evalPointTooltip': '四麻30000点、三麻40000点基準。基礎得点は累積Point区間に応じて修正係数(1.00〜0.50)が適用されます。さらに総対局数に応じた補充係数(≤100局×1.0、>2000局×0.1)が掛けられます。',
+    'memberStats.tab4Player': '四人麻雀',
+    'memberStats.tab3Player': '三人麻雀',
 
     // History page
     'history.title': '過去の対局',
@@ -330,6 +340,10 @@ export const translations = {
     'personal.savedRoomsDesc': '快速载入常用成员',
     'personal.manageRooms': '管理房间',
     'personal.manageRoomsDesc': '编辑成员 · 查看详细个人战绩',
+    'personal.roomManageHint': '想快速开局？从这里选房间直接开始',
+    'personal.memberManageHint': '查看个人战绩和数据统计',
+    'personal.roomManageLabel': '房间管理',
+    'personal.memberManageLabel': '成员管理',
 
     // Home
     'home.createRoom': '创建对局',
@@ -430,6 +444,7 @@ export const translations = {
     'report.simpleMode': '简洁',
     'report.detailedMode': '详细',
     'report.rankTrend': '排名走势',
+    'report.dragHint': '← 横向拖拽查看更多',
     'report.avgRank': '平均排名',
     'report.finalScore': '最终素点',
     'room.confirmEndTodayMatch': '确定结束对战吗？',
@@ -494,6 +509,11 @@ export const translations = {
     'memberStats.matchHistory': '最近对局',
     'memberStats.noData': '暂无对局数据',
     'memberStats.viewStats': '个人数据',
+    'memberStats.rankOf': '排名基于所有已注册成员的综合评价Point进行排序。',
+    'memberStats.evalPoint': '综合评价Point',
+    'memberStats.evalPointTooltip': '统一素点制系统，四麻30000点，三麻40000点。基础得点根据累计Point区间（600-5000+）进行系数修正（1.00至0.50）。最后根据总对局数应用补充系数（≤100局×1.0，>2000局×0.1）。',
+    'memberStats.tab4Player': '四人麻将',
+    'memberStats.tab3Player': '三人麻将',
 
     // History page
     'history.title': '以往战绩',
@@ -625,6 +645,10 @@ export const translations = {
     'personal.savedRoomsDesc': 'Quickly start with saved members',
     'personal.manageRooms': 'Manage Rooms',
     'personal.manageRoomsDesc': 'Edit members & view detailed stats',
+    'personal.roomManageHint': 'Quick start from saved rooms',
+    'personal.memberManageHint': 'View personal stats & data',
+    'personal.roomManageLabel': 'Rooms',
+    'personal.memberManageLabel': 'Members',
 
     // Home
     'home.createRoom': 'Create Game',
@@ -725,6 +749,7 @@ export const translations = {
     'report.simpleMode': 'Simple',
     'report.detailedMode': 'Detailed',
     'report.rankTrend': 'Rank Trend',
+    'report.dragHint': '← Swipe to see more',
     'report.avgRank': 'Avg Rank',
     'report.finalScore': 'Final Score',
     'room.confirmEndTodayMatch': 'End match?',
@@ -789,6 +814,11 @@ export const translations = {
     'memberStats.matchHistory': 'Recent Matches',
     'memberStats.noData': 'No match data yet',
     'memberStats.viewStats': 'Stats',
+    'memberStats.rankOf': 'Ranking is based on Evaluation Point across all registered members.',
+    'memberStats.evalPoint': 'Eval Point',
+    'memberStats.evalPointTooltip': 'Unified system. Base: 4-player 30k, 3-player 40k. Base points are modified by a multiplier (1.00 to 0.50) based on cumulative point bracket, and further adjusted by a total games multiplier (≤100 games ×1.0 to >2000 games ×0.1).',
+    'memberStats.tab4Player': '4-Player',
+    'memberStats.tab3Player': '3-Player',
 
     // History page
     'history.title': 'Match History',

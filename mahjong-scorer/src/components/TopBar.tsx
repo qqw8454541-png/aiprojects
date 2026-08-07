@@ -12,7 +12,8 @@ export default function TopBar() {
   const { locale, setLocale, t } = useI18n();
   const { 
     roomCode, currentPage, rounds, 
-    setPage, resetRoom, roomName, setRoomName 
+    setPage, resetRoom, roomName, setRoomName,
+    manageRoomsMode
   } = useGameStore();
   const { isLoggedIn: authLoggedIn, user: authUser, isPro: authIsPro, openAuthModal } = useAuthStore();
 
@@ -122,7 +123,7 @@ export default function TopBar() {
     } else if (currentPage === 'profile') {
       Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('profile.title')}</h1>;
     } else if (currentPage === 'manage-rooms') {
-      Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('manage.title')}</h1>;
+      Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{manageRoomsMode === 'rooms' ? t('personal.roomManageLabel' as any) : t('personal.memberManageLabel' as any)}</h1>;
     } else if (currentPage === 'member-stats') {
       Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('memberStats.title' as any)}</h1>;
     } else if (currentPage === 'room-history') {

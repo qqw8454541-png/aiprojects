@@ -82,7 +82,7 @@ export default function PersonalMenuPage() {
   ];
 
   return (
-    <div className="flex flex-col min-h-dvh pt-24 px-5 page-enter">
+    <div className="flex flex-col min-h-dvh pt-24 px-5 pb-8 page-enter">
       <div className="space-y-4">
         {items.map((item) => (
           <button
@@ -105,7 +105,48 @@ export default function PersonalMenuPage() {
             </div>
           </button>
         ))}
+
+        {/* ── Room & Member Management Split Cards ────────────────────────────── */}
+        <div className="grid grid-cols-2 gap-3 pt-2">
+          <button
+            onClick={() => {
+              useGameStore.getState().setManageRoomsMode('rooms');
+              setPage('manage-rooms');
+            }}
+            className="p-4 rounded-2xl bg-white dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/50 
+                     hover:bg-zinc-50 dark:hover:bg-zinc-700/80 active:scale-[0.98] transition-all shadow-sm
+                     flex flex-col items-start gap-2 group text-left"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-xl group-hover:scale-110 transition-transform">🏠</span>
+              <span className="font-bold text-zinc-900 dark:text-zinc-100">{t('personal.roomManageLabel' as any)}</span>
+            </div>
+            <div className="text-[11px] leading-snug text-zinc-500 dark:text-zinc-400 font-medium">
+              {t('personal.roomManageHint' as any)}
+            </div>
+          </button>
+
+          <button
+            onClick={() => {
+              useGameStore.getState().setManageRoomsMode('members');
+              setPage('manage-rooms');
+            }}
+            className="p-4 rounded-2xl bg-white dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/50 
+                     hover:bg-zinc-50 dark:hover:bg-zinc-700/80 active:scale-[0.98] transition-all shadow-sm
+                     flex flex-col items-start gap-2 group text-left"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-xl group-hover:scale-110 transition-transform">👥</span>
+              <span className="font-bold text-zinc-900 dark:text-zinc-100">{t('personal.memberManageLabel' as any)}</span>
+            </div>
+            <div className="text-[11px] leading-snug text-zinc-500 dark:text-zinc-400 font-medium">
+              {t('personal.memberManageHint' as any)}
+            </div>
+          </button>
+        </div>
       </div>
+
+      <div className="flex-1 min-h-[32px]" />
 
       {/* ── Auth & Billing Section ────────────────────────────── */}
       <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-800 space-y-3">

@@ -14,11 +14,10 @@ import { hapticWarning } from '@/lib/haptics';
 
 export default function ManageRoomsPage() {
   const { t } = useI18n();
-  const { deviceId, setPage, setViewingHistoryRoomId, loadSavedRoom } = useGameStore();
+  const { deviceId, setPage, setViewingHistoryRoomId, loadSavedRoom, manageRoomsMode } = useGameStore();
   const { isPro: authIsPro, user } = useAuthStore();
   const [rooms, setRooms] = useState<DbSavedRoom[]>([]);
   const [members, setMembers] = useState<DbSavedMember[]>([]);
-  const [activeTab, setActiveTab] = useState<'rooms' | 'members'>('rooms');
   const [loading, setLoading] = useState(true);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -141,24 +140,7 @@ export default function ManageRoomsPage() {
         <div className="flex justify-center py-20 text-zinc-400">Loading...</div>
       ) : (
         <>
-          <div className="flex bg-zinc-100 dark:bg-zinc-800/50 p-1 rounded-xl mb-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
-            <button 
-              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'rooms' ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
-              onClick={() => setActiveTab('rooms')}
-            >
-              {t('manage.tabRooms' as Parameters<typeof t>[0])}
-            </button>
-            <button 
-              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'members' ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
-              onClick={() => setActiveTab('members')}
-            >
-              {t('manage.tabMembers' as Parameters<typeof t>[0])}
-            </button>
-          </div>
-
-
-
-          {activeTab === 'rooms' && (
+          {manageRoomsMode === 'rooms' && (
             rooms.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
                 <div className="text-5xl">⚙️</div>
@@ -232,7 +214,7 @@ export default function ManageRoomsPage() {
             )
           )}
 
-      {activeTab === 'members' && (
+      {manageRoomsMode === 'members' && (
         <div className="space-y-4">
           {(() => {
             return (

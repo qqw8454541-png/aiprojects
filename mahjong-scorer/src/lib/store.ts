@@ -78,6 +78,9 @@ interface GameState {
   // If session was started from a saved room, track it for archiving
   sessionSavedRoomId: string | null;
 
+  // Manage rooms page mode
+  manageRoomsMode: 'rooms' | 'members';
+
   // Track current active session ID in db to prevent duplicate history records
   currentSessionDbId: string | null;
 
@@ -124,6 +127,9 @@ interface GameState {
 
   // Manage history page
   setViewingHistoryRoomId: (id: string | null) => void;
+
+  // Manage rooms page mode
+  setManageRoomsMode: (mode: 'rooms' | 'members') => void;
 
   // Member stats
   setViewingMemberId: (id: string | null) => void;
@@ -179,12 +185,14 @@ export const useGameStore = create<GameState>()(
       recentRooms: [],
       viewingHistoryRoomId: null,
       sessionSavedRoomId: null,
+      manageRoomsMode: 'rooms',
       currentSessionDbId: null,
       viewingMemberId: null,
 
       // ── Navigation ──────────────────────────────────────────
 
       setPage: (page) => set({ currentPage: page }),
+      setManageRoomsMode: (mode) => set({ manageRoomsMode: mode }),
 
       // ── Room session ────────────────────────────────────────
 

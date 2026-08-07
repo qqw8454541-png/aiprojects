@@ -288,7 +288,7 @@ export default function ReportPage() {
     }
   }
 
-  const renderCardContent = (mode: 'simple' | 'detailed', domId: string) => (
+  const renderCardContent = (mode: 'simple' | 'detailed', domId: string, isExport = false) => (
     <div id={domId} className="w-full max-w-sm rounded-3xl bg-white dark:bg-zinc-900 p-6 shadow-2xl border border-zinc-200 dark:border-zinc-800 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-3xl rounded-full" />
       <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 blur-3xl rounded-full" />
@@ -341,6 +341,7 @@ export default function ReportPage() {
                   sortedPlayers={sortedPlayers} 
                   playerNamesMap={playerNamesMap} 
                   playerId={playerId}
+                  exportMode={isExport}
                 />
               )}
               
@@ -455,8 +456,8 @@ export default function ReportPage() {
       {renderCardContent(viewMode, 'report-card')}
 
       <div className="absolute top-[-9999px] left-[-9999px] opacity-0 pointer-events-none">
-        {renderCardContent('simple', 'report-card-export-simple')}
-        {renderCardContent('detailed', 'report-card-export-detailed')}
+        {renderCardContent('simple', 'report-card-export-simple', true)}
+        {renderCardContent('detailed', 'report-card-export-detailed', true)}
       </div>
 
       <div className="mt-8 flex flex-col gap-3 w-full max-w-sm safe-area-pb">

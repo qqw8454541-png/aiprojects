@@ -5,9 +5,40 @@ import { useGameStore } from '@/lib/store';
 import { useAuthStore } from '@/lib/auth-store';
 import { supabase, authReady } from '@/lib/supabase';
 import { listUserDeviceIds } from '@/lib/device-info';
-import type { DbSavedMember, DbSessionRound, DbRoundPlayerResult } from '@/lib/repository';
+import type { DbSavedMember, DbRoundPlayerResult } from '@/lib/repository';
 import Avatar from '@/components/Avatar';
 import RankChart from '@/components/RankChart';
+import { calculateEvaluationPoint } from '@/lib/evaluation-point';
+import { HelpCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// ── UI Components ──────────────────────────────────────────────
+
+function Tooltip({ content, children }: { content: string, children: React.ReactNode }) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className="relative inline-flex items-center" 
+      onMouseEnter={() => setIsOpen(true)} 
+      onMouseLeave={() => setIsOpen(false)}
+      onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
+    >
+      {children}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 5 }}
+            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[11px] leading-relaxed rounded-xl shadow-xl z-50 pointer-events-none text-left"
+          >
+            {content}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-zinc-900 dark:border-t-zinc-100" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 // ── Lightweight types for direct queries ──────────────────────
 
@@ -26,10 +57,12 @@ interface MemberSession {
   memberResult: DbRoundPlayerResult;
 }
 
-interface PtRankEntry {
+interface MemberEvalData {
   memberId: string;
-  totalPt: number;
-  rank: number;
+  totalEvalPoint4: number;
+  totalEvalPoint3: number;
+  rank4: number;
+  rank3: number;
 }
 
 // ── Direct Supabase queries (bypass heavy repo.sessions.list) ─
@@ -44,14 +77,9 @@ async function getDeviceFilter(deviceId: string): Promise<string[]> {
   return [deviceId];
 }
 
-/** Query 1: Get PT totals for all members (lightweight — no full session data) */
-async function fetchPtRanking(deviceIds: string[]): Promise<Record<string, PtRankEntry>> {
-  // Get all session_players for these devices, with their round results
-  // Join: session_players → completed_sessions (for device filter)
-  //       session_players.player_id → round_player_results.player_id (matched via round's session)
-  
-  // Step A: Get all session IDs for these devices
-  let sessQuery = supabase
+/** Query 1: Get Evaluation Point totals for all members */
+async function fetchEvaluationRanking(deviceIds: string[]): Promise<Record<string, MemberEvalData>> {
+  const sessQuery = supabase
     .from('completed_sessions')
     .select('id')
     .in('device_id', deviceIds);
@@ -60,7 +88,6 @@ async function fetchPtRanking(deviceIds: string[]): Promise<Record<string, PtRan
   
   const sessionIds = sessRows.map((r: any) => r.id);
   
-  // Step B: Get all session_players with saved_member_id
   const { data: players } = await supabase
     .from('session_players')
     .select('session_id, player_id, saved_member_id')
@@ -68,7 +95,6 @@ async function fetchPtRanking(deviceIds: string[]): Promise<Record<string, PtRan
     .not('saved_member_id', 'is', null);
   if (!players || players.length === 0) return {};
   
-  // Build player_id → saved_member_id map per session
   const playerMemberMap: Record<string, Record<string, string>> = {};
   for (const p of players) {
     if (!p.saved_member_id) continue;
@@ -76,65 +102,114 @@ async function fetchPtRanking(deviceIds: string[]): Promise<Record<string, PtRan
     playerMemberMap[p.session_id][p.player_id] = p.saved_member_id;
   }
   
-  // Step C: Get all round IDs for these sessions
   const { data: rounds } = await supabase
     .from('session_rounds')
-    .select('id, session_id')
+    .select('id, session_id, start_time')
     .in('session_id', sessionIds)
     .eq('status', 'completed');
   if (!rounds || rounds.length === 0) return {};
   
   const roundSessionMap: Record<string, string> = {};
+  const roundTimeMap: Record<string, number> = {};
   const roundIds = rounds.map((r: any) => {
     roundSessionMap[r.id] = r.session_id;
+    roundTimeMap[r.id] = Number(r.start_time);
     return r.id;
   });
   
-  // Step D: Get all results — batch in chunks of 500 to avoid URL length limits
-  const ptMap: Record<string, number> = {};
+  const allResults: any[] = [];
   const chunkSize = 500;
   for (let i = 0; i < roundIds.length; i += chunkSize) {
     const chunk = roundIds.slice(i, i + chunkSize);
     const { data: results } = await supabase
       .from('round_player_results')
-      .select('round_id, player_id, pt')
+      .select('round_id, player_id, raw_score, rank')
       .in('round_id', chunk);
-    
-    for (const r of results || []) {
-      const sessId = roundSessionMap[r.round_id];
-      const memberId = playerMemberMap[sessId]?.[r.player_id];
-      if (memberId) {
-        ptMap[memberId] = (ptMap[memberId] || 0) + Number(r.pt);
+    if (results) allResults.push(...results);
+  }
+
+  const roundPlayerCount: Record<string, number> = {};
+  for (const r of allResults) {
+    roundPlayerCount[r.round_id] = (roundPlayerCount[r.round_id] || 0) + 1;
+  }
+
+  const memberRounds: Record<string, {
+    4: { rawScore: number; rank: number; time: number }[];
+    3: { rawScore: number; rank: number; time: number }[];
+  }> = {};
+
+  for (const r of allResults) {
+    const sessId = roundSessionMap[r.round_id];
+    const memberId = playerMemberMap[sessId]?.[r.player_id];
+    if (memberId) {
+      const pCount = roundPlayerCount[r.round_id];
+      if (pCount === 3 || pCount === 4) {
+        if (!memberRounds[memberId]) {
+          memberRounds[memberId] = { 4: [], 3: [] };
+        }
+        memberRounds[memberId][pCount as 3|4].push({
+          rawScore: r.raw_score,
+          rank: r.rank,
+          time: roundTimeMap[r.round_id] || 0,
+        });
       }
     }
   }
-  
-  // Sort and assign ranks
-  const sorted = Object.entries(ptMap).sort(([, a], [, b]) => b - a);
-  const ranks: Record<string, PtRankEntry> = {};
-  sorted.forEach(([id, pt], idx) => {
-    ranks[id] = { memberId: id, totalPt: pt, rank: idx + 1 };
+
+  const evalData: Record<string, MemberEvalData> = {};
+  const ranks4: { memberId: string; pt: number }[] = [];
+  const ranks3: { memberId: string; pt: number }[] = [];
+
+  for (const [memberId, types] of Object.entries(memberRounds)) {
+    let eval4 = 0;
+    if (types[4].length > 0) {
+      const sorted4 = types[4].sort((a, b) => a.time - b.time);
+      const evalRounds4 = sorted4.map(r => ({ rawScore: r.rawScore, rank: r.rank, playerCount: 4 }));
+      eval4 = calculateEvaluationPoint(evalRounds4, evalRounds4.length).totalPoint;
+      ranks4.push({ memberId, pt: eval4 });
+    }
+
+    let eval3 = 0;
+    if (types[3].length > 0) {
+      const sorted3 = types[3].sort((a, b) => a.time - b.time);
+      const evalRounds3 = sorted3.map(r => ({ rawScore: r.rawScore, rank: r.rank, playerCount: 3 }));
+      eval3 = calculateEvaluationPoint(evalRounds3, evalRounds3.length).totalPoint;
+      ranks3.push({ memberId, pt: eval3 });
+    }
+
+    evalData[memberId] = {
+      memberId,
+      totalEvalPoint4: eval4,
+      totalEvalPoint3: eval3,
+      rank4: 0,
+      rank3: 0
+    };
+  }
+
+  ranks4.sort((a, b) => b.pt - a.pt).forEach((r, idx) => {
+    evalData[r.memberId].rank4 = idx + 1;
   });
-  return ranks;
+  ranks3.sort((a, b) => b.pt - a.pt).forEach((r, idx) => {
+    evalData[r.memberId].rank3 = idx + 1;
+  });
+
+  return evalData;
 }
 
 /** Query 2: Get only sessions where viewingMemberId participated (with full round detail) */
 async function fetchMemberSessions(deviceIds: string[], memberId: string): Promise<MemberSession[]> {
-  // Step A: Find session_players rows for this member
   const { data: playerRows } = await supabase
     .from('session_players')
     .select('session_id, player_id')
     .eq('saved_member_id', memberId);
   if (!playerRows || playerRows.length === 0) return [];
   
-  // Map: session_id → player_id (the in-session ID for this member)
   const sessionPlayerMap: Record<string, string> = {};
   const memberSessionIds = playerRows.map((p: any) => {
     sessionPlayerMap[p.session_id] = p.player_id;
     return p.session_id;
   });
   
-  // Step B: Fetch those sessions with nested rounds + results in ONE query
   const { data: sessions } = await supabase
     .from('completed_sessions')
     .select(`
@@ -182,7 +257,6 @@ async function fetchMemberSessions(deviceIds: string[], memberId: string): Promi
     }
   }
   
-  // Sort by time descending
   result.sort((a, b) => {
     const timeA = a.round.endTime || a.round.startTime || new Date(a.playedAt).getTime();
     const timeB = b.round.endTime || b.round.startTime || new Date(b.playedAt).getTime();
@@ -201,8 +275,9 @@ export default function MemberStatsPage() {
 
   const [loading, setLoading] = useState(true);
   const [member, setMember] = useState<DbSavedMember | null>(null);
-  const [ptRanks, setPtRanks] = useState<Record<string, PtRankEntry>>({});
+  const [evalRanks, setEvalRanks] = useState<Record<string, MemberEvalData>>({});
   const [matchHistory, setMatchHistory] = useState<MemberSession[]>([]);
+  const [gameTypeTab, setGameTypeTab] = useState<'4-player' | '3-player'>('4-player');
 
   useEffect(() => {
     if (!deviceId || !viewingMemberId) {
@@ -215,19 +290,15 @@ export default function MemberStatsPage() {
       try {
         const deviceIds = await getDeviceFilter(deviceId);
         
-        // 3 parallel queries — each is lightweight and targeted
         const [memberRow, ranking, sessions] = await Promise.all([
-          // Q1: Member info (single row)
           supabase.from('saved_members').select('*').eq('id', viewingMemberId).single()
             .then(({ data }) => data as DbSavedMember | null),
-          // Q2: PT ranking (aggregate, no full session payloads)
-          fetchPtRanking(deviceIds),
-          // Q3: Only this member's sessions (filtered server-side)
+          fetchEvaluationRanking(deviceIds),
           fetchMemberSessions(deviceIds, viewingMemberId),
         ]);
         
         if (memberRow) setMember(memberRow);
-        setPtRanks(ranking);
+        setEvalRanks(ranking);
         setMatchHistory(sessions);
       } catch (err: any) {
         console.error("Failed to load member stats:", err);
@@ -237,16 +308,80 @@ export default function MemberStatsPage() {
     })();
   }, [deviceId, viewingMemberId, authIsPro, user?.id]);
 
-  // Compute stats from loaded data
   const stats = useMemo(() => {
-    if (!viewingMemberId || matchHistory.length === 0) return null;
+    if (!viewingMemberId || !member) return null;
+
+    const filteredHistory = matchHistory.filter(item => {
+      const pCount = item.round.results.length;
+      return gameTypeTab === '4-player' ? pCount === 4 : pCount === 3;
+    });
+
+    const rankData = evalRanks[viewingMemberId];
+    let totalRank = 0;
+    let rankTotalPlayers = 0;
+    let totalEvalPt = 0;
+    
+    if (rankData) {
+      if (gameTypeTab === '4-player') {
+        totalRank = rankData.rank4;
+        totalEvalPt = rankData.totalEvalPoint4;
+        rankTotalPlayers = Object.values(evalRanks).filter(r => r.rank4 > 0).length;
+      } else {
+        totalRank = rankData.rank3;
+        totalEvalPt = rankData.totalEvalPoint3;
+        rankTotalPlayers = Object.values(evalRanks).filter(r => r.rank3 > 0).length;
+      }
+    }
+
+    if (filteredHistory.length === 0) {
+      return {
+        isEmpty: true,
+        pt: totalEvalPt,
+        rank: totalRank,
+        totalPlayers: rankTotalPlayers,
+        totalGames: 0,
+        maxScore: 0,
+        minScore: 0,
+        avgScore: 0,
+        rankCounts: [0, 0, 0, 0],
+        chartRounds: [],
+        history: []
+      };
+    }
     
     let totalScore = 0;
     let maxScore = -Infinity;
     let minScore = Infinity;
     const rankCounts = [0, 0, 0, 0];
     
-    for (const item of matchHistory) {
+    const chronologicalRounds = [...filteredHistory].reverse();
+    const evalInputRounds = chronologicalRounds.map(item => ({
+      rawScore: item.memberResult.raw_score,
+      rank: item.memberResult.rank,
+      playerCount: item.round.results.length
+    }));
+    const evalData = calculateEvaluationPoint(evalInputRounds, evalInputRounds.length);
+    
+    const recent10 = chronologicalRounds.slice(-10);
+    const chartRounds = recent10.map((item, idx) => {
+      const globalIdx = chronologicalRounds.length - recent10.length + idx;
+      const roundEvalPoint = evalData.roundPoints[globalIdx] || 0;
+      
+      return {
+        id: item.round.id,
+        roundNumber: idx + 1,
+        results: [{
+          playerId: viewingMemberId,
+          playerName: member.name,
+          wind: item.memberResult.wind as any,
+          rawScore: item.memberResult.raw_score,
+          rank: item.memberResult.rank,
+          pt: roundEvalPoint
+        }]
+      };
+    });
+
+    for (const item of filteredHistory) {
       const r = item.memberResult;
       totalScore += r.raw_score;
       if (r.raw_score > maxScore) maxScore = r.raw_score;
@@ -254,36 +389,23 @@ export default function MemberStatsPage() {
       if (r.rank >= 1 && r.rank <= 4) rankCounts[r.rank - 1]++;
     }
 
-    const totalGames = matchHistory.length;
+    const totalGames = filteredHistory.length;
     const avgScore = totalGames > 0 ? Math.round(totalScore / totalGames) : 0;
-    const ptData = ptRanks[viewingMemberId] || { totalPt: 0, rank: Object.keys(ptRanks).length + 1 };
     
-    // Recent 10 for chart (chronological order)
-    const recent10 = matchHistory.slice(0, 10).reverse();
-    const chartRounds = recent10.map((item, idx) => ({
-      id: item.round.id,
-      roundNumber: idx + 1,
-      results: [{
-        playerId: viewingMemberId,
-        playerName: member?.name || '',
-        wind: item.memberResult.wind as any,
-        rawScore: item.memberResult.raw_score,
-        rank: item.memberResult.rank,
-        pt: item.memberResult.pt
-      }]
-    }));
-
     return {
-      pt: ptData.totalPt,
-      rank: ptData.rank,
+      isEmpty: false,
+      pt: totalEvalPt,
+      rank: totalRank,
+      totalPlayers: rankTotalPlayers,
       totalGames,
       maxScore: maxScore === -Infinity ? 0 : maxScore,
       minScore: minScore === Infinity ? 0 : minScore,
       avgScore,
       rankCounts,
-      chartRounds
+      chartRounds,
+      history: filteredHistory
     };
-  }, [matchHistory, viewingMemberId, ptRanks, member]);
+  }, [matchHistory, viewingMemberId, evalRanks, member, gameTypeTab]);
 
   if (loading) {
     return (
@@ -306,65 +428,116 @@ export default function MemberStatsPage() {
   return (
     <div className="min-h-dvh pt-24 px-4 pb-8 page-enter space-y-4">
       
+
+
       {/* Card 1: Overview */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-3xl rounded-full pointer-events-none" />
         
         {/* Top Row: Rank, Avatar/Name, PT */}
         <div className="flex items-center justify-between mb-6">
-          <div className="flex flex-col items-center justify-center min-w-[60px]">
-            <span className="text-xs text-zinc-500 font-bold uppercase mb-1">{t('memberStats.ptRank' as any)}</span>
-            <span className="text-3xl font-black text-zinc-900 dark:text-zinc-100">#{stats.rank}</span>
+          <div className="flex flex-col items-center justify-center min-w-[70px] relative">
+            <div className="flex items-center gap-1 mb-1">
+              <span className="text-xs text-zinc-500 font-bold uppercase">{t('memberStats.ptRank' as any)}</span>
+              <Tooltip content={t('memberStats.rankOf' as any)}>
+                <HelpCircle className="w-3.5 h-3.5 text-zinc-400 cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors" />
+              </Tooltip>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-black text-zinc-900 dark:text-zinc-100">
+                {stats.rank > 0 ? `#${stats.rank}` : '-'}
+              </span>
+              {stats.rank > 0 && (
+                <span className="text-xs text-zinc-500 font-bold whitespace-nowrap">
+                  / {stats.totalPlayers}{locale === 'zh' || locale === 'ja' ? '人' : ''}
+                </span>
+              )}
+            </div>
           </div>
           
           <div className="flex flex-col items-center flex-1 mx-2">
             <Avatar seed={member.avatar_seed} size={72} className="shadow-md mb-3 ring-4 ring-zinc-50 dark:ring-zinc-800" />
             <div className="flex items-baseline gap-2">
-              <span className="font-bold text-xl text-zinc-900 dark:text-zinc-100 truncate max-w-[200px]">{member.name}</span>
+              <span className="font-bold text-xl text-zinc-900 dark:text-zinc-100 truncate max-w-[180px]">{member.name}</span>
             </div>
           </div>
           
-          <div className="flex flex-col items-center justify-center min-w-[60px]">
-            <span className="text-xs text-zinc-500 font-bold uppercase mb-1">{t('memberStats.totalPt' as any)}</span>
+          <div className="flex flex-col items-center justify-center min-w-[70px] relative">
+            <div className="flex items-center gap-1 mb-1">
+              <span className="text-xs text-zinc-500 font-bold uppercase">{t('memberStats.evalPoint' as any)}</span>
+              <Tooltip content={t('memberStats.evalPointTooltip' as any)}>
+                <HelpCircle className="w-3.5 h-3.5 text-zinc-400 cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors" />
+              </Tooltip>
+            </div>
             <span className={`text-3xl font-black ${stats.pt >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
               {stats.pt > 0 ? '+' : ''}{stats.pt.toFixed(1)}
             </span>
           </div>
         </div>
 
-        {/* Middle Row: Games, High, Low, Avg */}
-        <div className="grid grid-cols-4 gap-2 mb-6">
-          <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-800/50 p-2.5 rounded-xl">
-            <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.totalGames' as any)}</span>
-            <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.totalGames}</span>
-          </div>
-          <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-800/50 p-2.5 rounded-xl">
-            <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.highScore' as any)}</span>
-            <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.maxScore}</span>
-          </div>
-          <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-800/50 p-2.5 rounded-xl">
-            <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.lowScore' as any)}</span>
-            <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.minScore}</span>
-          </div>
-          <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-800/50 p-2.5 rounded-xl">
-            <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.avgScore' as any)}</span>
-            <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.avgScore}</span>
-          </div>
-        </div>
-
-        {/* Bottom Row: Rank Distribution */}
-        <div className="grid grid-cols-4 gap-2">
-          {['🥇', '🥈', '🥉', '4️⃣'].map((emoji, idx) => (
-            <div key={idx} className="flex items-center justify-center gap-2 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-100 dark:border-zinc-700/30">
-              <span className="text-sm">{emoji}</span>
-              <span className="font-bold text-sm text-zinc-700 dark:text-zinc-300">{stats.rankCounts[idx]}</span>
+        {stats.isEmpty ? (
+          <div className="text-center text-zinc-400 py-6 text-sm">{t('memberStats.noData' as any)}</div>
+        ) : (
+          <>
+            {/* Middle Row: Games, High, Low, Avg */}
+            <div className="grid grid-cols-4 gap-2 mb-6">
+              <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-800/50 p-2.5 rounded-xl">
+                <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.totalGames' as any)}</span>
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.totalGames}</span>
+              </div>
+              <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-800/50 p-2.5 rounded-xl">
+                <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.highScore' as any)}</span>
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.maxScore}</span>
+              </div>
+              <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-800/50 p-2.5 rounded-xl">
+                <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.lowScore' as any)}</span>
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.minScore}</span>
+              </div>
+              <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-800/50 p-2.5 rounded-xl">
+                <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.avgScore' as any)}</span>
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.avgScore}</span>
+              </div>
             </div>
-          ))}
-        </div>
+
+            {/* Bottom Row: Rank Distribution */}
+            <div className={`grid gap-2 ${gameTypeTab === '4-player' ? 'grid-cols-4' : 'grid-cols-3'}`}>
+              {['🥇', '🥈', '🥉', '4️⃣'].slice(0, gameTypeTab === '4-player' ? 4 : 3).map((emoji, idx) => (
+                <div key={idx} className="flex items-center justify-center gap-2 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-100 dark:border-zinc-700/30">
+                  <span className="text-sm">{emoji}</span>
+                  <span className="font-bold text-sm text-zinc-700 dark:text-zinc-300">{stats.rankCounts[idx]}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-full mx-auto max-w-[280px]">
+        <button
+          onClick={() => setGameTypeTab('4-player')}
+          className={`flex-1 text-sm font-bold py-1.5 rounded-full transition-all ${
+            gameTypeTab === '4-player'
+              ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow'
+              : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+          }`}
+        >
+          {t('memberStats.tab4Player' as any)}
+        </button>
+        <button
+          onClick={() => setGameTypeTab('3-player')}
+          className={`flex-1 text-sm font-bold py-1.5 rounded-full transition-all ${
+            gameTypeTab === '3-player'
+              ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow'
+              : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+          }`}
+        >
+          {t('memberStats.tab3Player' as any)}
+        </button>
       </div>
 
       {/* Card 2: Trend Chart */}
-      {stats.chartRounds.length > 0 && viewingMemberId && (
+      {!stats.isEmpty && stats.chartRounds.length > 0 && viewingMemberId && (
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm relative">
           <h2 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-4">{t('memberStats.recentTrend' as any)}</h2>
           <RankChart 
@@ -377,14 +550,11 @@ export default function MemberStatsPage() {
       )}
 
       {/* Card 3: Match History */}
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-        <h2 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-4">{t('memberStats.matchHistory' as any)}</h2>
-        
-        {matchHistory.length === 0 ? (
-          <div className="text-center text-zinc-400 py-6">{t('memberStats.noData' as any)}</div>
-        ) : (
+      {!stats.isEmpty && (
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          <h2 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-4">{t('memberStats.matchHistory' as any)}</h2>
           <div className="space-y-4">
-            {matchHistory.map((item) => {
+            {stats.history.map((item) => {
               const time = item.round.endTime || item.round.startTime || new Date(item.playedAt).getTime();
               const dateStr = new Date(time).toLocaleString(locale === 'ja' ? 'ja-JP' : locale === 'zh' ? 'zh-CN' : 'en-US', {
                 month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -404,7 +574,7 @@ export default function MemberStatsPage() {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-2 text-[10px]">
+                  <div className={`grid gap-2 text-[10px] ${players.length === 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
                     {players.map(p => {
                       const isMe = p.player_id === item.playerId;
                       return (
@@ -414,7 +584,7 @@ export default function MemberStatsPage() {
                           </span>
                           <div className="flex items-center gap-1.5 flex-shrink-0">
                             <span className="text-zinc-400">{p.raw_score}</span>
-                            <span className={`font-bold font-mono w-8 text-right ${p.pt >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                            <span className={`font-bold font-mono text-right ${p.pt >= 0 ? 'text-emerald-500' : 'text-red-500'} ${players.length === 3 ? 'w-6' : 'w-8'}`}>
                               {p.pt > 0 ? '+' : ''}{p.pt.toFixed(1)}
                             </span>
                           </div>
@@ -426,8 +596,8 @@ export default function MemberStatsPage() {
               );
             })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
       
     </div>
   );
