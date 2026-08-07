@@ -209,6 +209,7 @@ export const translations = {
     'memberStats.evalPointTooltip': '四麻30000点、三麻40000点基準。基礎得点は累積Point区間に応じて修正係数(1.00〜0.50)が適用されます。さらに総対局数に応じた補充係数(≤100局×1.0、>2000局×0.1)が掛けられます。',
     'memberStats.tab4Player': '四人麻雀',
     'memberStats.tab3Player': '三人麻雀',
+    'memberStats.loadMore': 'さらに表示',
 
     // History page
     'history.title': '過去の対局',
@@ -514,6 +515,7 @@ export const translations = {
     'memberStats.evalPointTooltip': '统一素点制系统，四麻30000点，三麻40000点。基础得点根据累计Point区间（600-5000+）进行系数修正（1.00至0.50）。最后根据总对局数应用补充系数（≤100局×1.0，>2000局×0.1）。',
     'memberStats.tab4Player': '四人麻将',
     'memberStats.tab3Player': '三人麻将',
+    'memberStats.loadMore': '展开更多',
 
     // History page
     'history.title': '以往战绩',
@@ -819,6 +821,7 @@ export const translations = {
     'memberStats.evalPointTooltip': 'Unified system. Base: 4-player 30k, 3-player 40k. Base points are modified by a multiplier (1.00 to 0.50) based on cumulative point bracket, and further adjusted by a total games multiplier (≤100 games ×1.0 to >2000 games ×0.1).',
     'memberStats.tab4Player': '4-Player',
     'memberStats.tab3Player': '3-Player',
+    'memberStats.loadMore': 'Load More',
 
     // History page
     'history.title': 'Match History',

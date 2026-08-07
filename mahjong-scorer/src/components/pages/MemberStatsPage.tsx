@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { useGameStore } from '@/lib/store';
 import { useAuthStore } from '@/lib/auth-store';
@@ -16,6 +16,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 function Tooltip({ content, children, align = 'center' }: { content: string, children: React.ReactNode, align?: 'left' | 'center' | 'right' }) {
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    
+    document.addEventListener('click', handleClickOutside, { capture: true });
+    return () => {
+      document.removeEventListener('click', handleClickOutside, { capture: true });
+    };
+  }, [isOpen]);
   
   let alignClasses = "left-1/2 -translate-x-1/2";
   let arrowClasses = "left-1/2 -translate-x-1/2";
@@ -29,9 +45,9 @@ function Tooltip({ content, children, align = 'center' }: { content: string, chi
   }
 
   return (
-    <div className="relative inline-flex items-center" 
-      onMouseEnter={() => setIsOpen(true)} 
-      onMouseLeave={() => setIsOpen(false)}
+    <div 
+      ref={containerRef}
+      className="relative inline-flex items-center" 
       onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
     >
       {children}
@@ -290,6 +306,7 @@ export default function MemberStatsPage() {
   const [evalRanks, setEvalRanks] = useState<Record<string, MemberEvalData>>({});
   const [matchHistory, setMatchHistory] = useState<MemberSession[]>([]);
   const [gameTypeTab, setGameTypeTab] = useState<'4-player' | '3-player'>('4-player');
+  const [visibleHistoryCount, setVisibleHistoryCount] = useState(10);
 
   useEffect(() => {
     if (!deviceId || !viewingMemberId) {
@@ -529,7 +546,7 @@ export default function MemberStatsPage() {
       {/* Tabs */}
       <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-full mx-auto max-w-[280px]">
         <button
-          onClick={() => setGameTypeTab('4-player')}
+          onClick={() => { setGameTypeTab('4-player'); setVisibleHistoryCount(10); }}
           className={`flex-1 text-sm font-bold py-1.5 rounded-full transition-all ${
             gameTypeTab === '4-player'
               ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow'
@@ -539,7 +556,7 @@ export default function MemberStatsPage() {
           {t('memberStats.tab4Player' as any)}
         </button>
         <button
-          onClick={() => setGameTypeTab('3-player')}
+          onClick={() => { setGameTypeTab('3-player'); setVisibleHistoryCount(10); }}
           className={`flex-1 text-sm font-bold py-1.5 rounded-full transition-all ${
             gameTypeTab === '3-player'
               ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow'
@@ -568,7 +585,7 @@ export default function MemberStatsPage() {
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm">
           <h2 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-4">{t('memberStats.matchHistory' as any)}</h2>
           <div className="space-y-4">
-            {stats.history.map((item) => {
+            {stats.history.slice(0, visibleHistoryCount).map((item) => {
               const time = item.round.endTime || item.round.startTime || new Date(item.playedAt).getTime();
               const dateStr = new Date(time).toLocaleString(locale === 'ja' ? 'ja-JP' : locale === 'zh' ? 'zh-CN' : 'en-US', {
                 month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -610,6 +627,15 @@ export default function MemberStatsPage() {
               );
             })}
           </div>
+          
+          {stats.history.length > visibleHistoryCount && (
+            <button
+              onClick={() => setVisibleHistoryCount(prev => prev + 10)}
+              className="w-full mt-4 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/50 dark:hover:bg-zinc-800 rounded-xl transition-colors"
+            >
+              {t('memberStats.loadMore' as any)}
+            </button>
+          )}
         </div>
       )}
       
