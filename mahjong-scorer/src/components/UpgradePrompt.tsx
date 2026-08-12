@@ -84,7 +84,7 @@ export default function UpgradePrompt() {
     } catch (e: any) {
       console.error('Upgrade failed:', e);
       // TODO(security): 不要在生产环境使用 alert()，应改为框架内 Toast/Modal 组件
-      alert(t('upgrade.error' as any));
+      alert(t('upgrade.error' as Parameters<typeof t>[0]));
     } finally {
       setPurchasing(false);
     }
@@ -99,11 +99,11 @@ export default function UpgradePrompt() {
         hapticSuccess();
         setIsSuccess(true);
       } else {
-        alert(t('upgrade.restoreNone' as any));
+        alert(t('upgrade.restoreNone' as Parameters<typeof t>[0]));
       }
     } catch (e) {
       console.error('Restore failed:', e);
-      alert(t('upgrade.restoreError' as any));
+      alert(t('upgrade.restoreError' as Parameters<typeof t>[0]));
     } finally {
       setRestoring(false);
     }
@@ -113,10 +113,10 @@ export default function UpgradePrompt() {
   if (!showUpgradePrompt) return null;
 
   const features = [
-    t('upgrade.feat1' as any),
-    t('upgrade.feat2' as any),
-    t('upgrade.feat3' as any),
-    t('upgrade.feat4' as any),
+    t('upgrade.feat1' as Parameters<typeof t>[0]),
+    t('upgrade.feat2' as Parameters<typeof t>[0]),
+    t('upgrade.feat3' as Parameters<typeof t>[0]),
+    t('upgrade.feat4' as Parameters<typeof t>[0]),
   ];
 
   return (
@@ -175,7 +175,7 @@ export default function UpgradePrompt() {
                   transition={{ delay: 0.4 }}
                   className="font-black text-2xl bg-gradient-to-br from-amber-500 to-orange-500 bg-clip-text text-transparent"
                 >
-                  {t('upgrade.successTitle' as any)}
+                  {t('upgrade.successTitle' as Parameters<typeof t>[0])}
                 </motion.h3>
                 <motion.p 
                   initial={{ opacity: 0, y: 10 }}
@@ -183,7 +183,7 @@ export default function UpgradePrompt() {
                   transition={{ delay: 0.5 }}
                   className="text-zinc-500 dark:text-zinc-400 text-sm font-medium"
                 >
-                  {t('upgrade.successDesc' as any)}
+                  {t('upgrade.successDesc' as Parameters<typeof t>[0])}
                 </motion.p>
               </div>
 
@@ -197,7 +197,7 @@ export default function UpgradePrompt() {
                 }}
                 className="w-full mt-4 py-4 rounded-2xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all active:scale-[0.97] shadow-lg"
               >
-                {t('common.confirm' as any)}
+                {t('common.confirm' as Parameters<typeof t>[0])}
               </motion.button>
             </motion.div>
           ) : (

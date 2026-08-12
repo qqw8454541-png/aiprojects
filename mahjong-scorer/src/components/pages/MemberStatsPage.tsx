@@ -113,81 +113,45 @@ async function getDeviceFilter(deviceId: string): Promise<string[]> {
   return [deviceId];
 }
 
+import { getRepository } from '@/lib/repo-factory';
+import type { DbCompletedSession } from '@/lib/repository';
+
 /** Query 1: Get Evaluation Point totals for all members */
 async function fetchEvaluationRanking(deviceIds: string[]): Promise<Record<string, MemberEvalData>> {
-  const sessQuery = supabase
-    .from('completed_sessions')
-    .select('id')
-    .in('device_id', deviceIds);
-  const { data: sessRows } = await sessQuery;
-  if (!sessRows || sessRows.length === 0) return {};
-  
-  const sessionIds = sessRows.map((r: any) => r.id);
-  
-  const { data: players } = await supabase
-    .from('session_players')
-    .select('session_id, player_id, saved_member_id')
-    .in('session_id', sessionIds)
-    .not('saved_member_id', 'is', null);
-  if (!players || players.length === 0) return {};
-  
-  const playerMemberMap: Record<string, Record<string, string>> = {};
-  for (const p of players) {
-    if (!p.saved_member_id) continue;
-    if (!playerMemberMap[p.session_id]) playerMemberMap[p.session_id] = {};
-    playerMemberMap[p.session_id][p.player_id] = p.saved_member_id;
+  const repo = await getRepository();
+  const allSessions: DbCompletedSession[] = [];
+  for (const id of deviceIds) {
+    const sessions = await repo.sessions.list(id);
+    allSessions.push(...sessions);
   }
   
-  const { data: rounds } = await supabase
-    .from('session_rounds')
-    .select('id, session_id, start_time')
-    .in('session_id', sessionIds)
-    .eq('status', 'completed');
-  if (!rounds || rounds.length === 0) return {};
-  
-  const roundSessionMap: Record<string, string> = {};
-  const roundTimeMap: Record<string, number> = {};
-  const roundIds = rounds.map((r: any) => {
-    roundSessionMap[r.id] = r.session_id;
-    roundTimeMap[r.id] = Number(r.start_time);
-    return r.id;
-  });
-  
-  const allResults: any[] = [];
-  const chunkSize = 500;
-  for (let i = 0; i < roundIds.length; i += chunkSize) {
-    const chunk = roundIds.slice(i, i + chunkSize);
-    const { data: results } = await supabase
-      .from('round_player_results')
-      .select('round_id, player_id, raw_score, rank')
-      .in('round_id', chunk);
-    if (results) allResults.push(...results);
-  }
-
-  const roundPlayerCount: Record<string, number> = {};
-  for (const r of allResults) {
-    roundPlayerCount[r.round_id] = (roundPlayerCount[r.round_id] || 0) + 1;
-  }
-
   const memberRounds: Record<string, {
     4: { rawScore: number; rank: number; time: number }[];
     3: { rawScore: number; rank: number; time: number }[];
   }> = {};
 
-  for (const r of allResults) {
-    const sessId = roundSessionMap[r.round_id];
-    const memberId = playerMemberMap[sessId]?.[r.player_id];
-    if (memberId) {
-      const pCount = roundPlayerCount[r.round_id];
+  for (const sess of allSessions) {
+    if (!sess.sessionRounds || !sess.sessionPlayers) continue;
+    const playerMemberMap: Record<string, string> = {};
+    for (const p of sess.sessionPlayers) {
+      if (p.saved_member_id) playerMemberMap[p.player_id] = p.saved_member_id;
+    }
+
+    for (const r of sess.sessionRounds) {
+      if (r.status !== 'completed' || !r.results) continue;
+      const pCount = r.results.length;
       if (pCount === 3 || pCount === 4) {
-        if (!memberRounds[memberId]) {
-          memberRounds[memberId] = { 4: [], 3: [] };
+        for (const res of r.results) {
+          const memberId = playerMemberMap[res.player_id];
+          if (memberId) {
+            if (!memberRounds[memberId]) memberRounds[memberId] = { 4: [], 3: [] };
+            memberRounds[memberId][pCount as 3|4].push({
+              rawScore: res.raw_score,
+              rank: res.rank,
+              time: r.start_time || 0,
+            });
+          }
         }
-        memberRounds[memberId][pCount as 3|4].push({
-          rawScore: r.raw_score,
-          rank: r.rank,
-          time: roundTimeMap[r.round_id] || 0,
-        });
       }
     }
   }
@@ -234,75 +198,46 @@ async function fetchEvaluationRanking(deviceIds: string[]): Promise<Record<strin
 
 /** Query 2: Get only sessions where viewingMemberId participated (with full round detail) */
 async function fetchMemberSessions(deviceIds: string[], memberId: string): Promise<MemberSession[]> {
-  const { data: playerRows } = await supabase
-    .from('session_players')
-    .select('session_id, player_id')
-    .eq('saved_member_id', memberId);
-  if (!playerRows || playerRows.length === 0) return [];
+  const repo = await getRepository();
+  const allSessions: DbCompletedSession[] = [];
+  for (const id of deviceIds) {
+    const sessions = await repo.sessions.list(id);
+    allSessions.push(...sessions);
+  }
   
-  const sessionPlayerMap: Record<string, string> = {};
-  const memberSessionIds = playerRows.map((p: any) => {
-    sessionPlayerMap[p.session_id] = p.player_id;
-    return p.session_id;
-  });
+  const memberSessions: MemberSession[] = [];
   
-  const { data: sessions } = await supabase
-    .from('completed_sessions')
-    .select(`
-      id, room_name, played_at,
-      session_rounds (
-        id, round_number, status, start_time, end_time,
-        round_player_results ( id, round_id, player_id, player_name, wind, raw_score, rank, pt )
-      )
-    `)
-    .in('id', memberSessionIds)
-    .in('device_id', deviceIds)
-    .order('played_at', { ascending: false });
-  
-  if (!sessions) return [];
-  
-  const result: MemberSession[] = [];
-  for (const sess of sessions) {
-    const playerId = sessionPlayerMap[sess.id];
-    const rounds = ((sess as any).session_rounds ?? [])
-      .filter((r: any) => r.status === 'completed')
-      .sort((a: any, b: any) => a.round_number - b.round_number);
+  for (const sess of allSessions) {
+    if (!sess.sessionRounds || !sess.sessionPlayers) continue;
+    const playerEntry = sess.sessionPlayers.find(p => p.saved_member_id === memberId);
+    if (!playerEntry) continue;
     
-    for (const rd of rounds) {
-      const results: DbRoundPlayerResult[] = (rd.round_player_results ?? [])
-        .sort((a: any, b: any) => a.rank - b.rank)
-        .map((r: any) => ({ ...r, pt: Number(r.pt) }));
-      
-      const memberResult = results.find(r => r.player_id === playerId);
-      if (!memberResult) continue;
-      
-      result.push({
-        sessionId: sess.id,
-        roomName: sess.room_name,
-        playedAt: sess.played_at,
-        playerId,
-        round: {
-          id: rd.id,
-          roundNumber: rd.round_number,
-          startTime: Number(rd.start_time),
-          endTime: rd.end_time ? Number(rd.end_time) : undefined,
-          results,
-        },
-        memberResult,
-      });
+    for (const r of sess.sessionRounds) {
+      if (r.status !== 'completed' || !r.results) continue;
+      const res = r.results.find(res => res.player_id === playerEntry.player_id);
+      if (res) {
+        memberSessions.push({
+          sessionId: sess.id,
+          roomName: sess.room_name || 'Unnamed Room',
+          playedAt: sess.played_at,
+          playerId: playerEntry.player_id,
+          round: {
+            id: r.id,
+            roundNumber: r.round_number,
+            startTime: r.start_time,
+            endTime: r.end_time,
+            results: r.results
+          },
+          memberResult: res
+        });
+      }
     }
   }
   
-  result.sort((a, b) => {
-    const timeA = a.round.endTime || a.round.startTime || new Date(a.playedAt).getTime();
-    const timeB = b.round.endTime || b.round.startTime || new Date(b.playedAt).getTime();
-    return timeB - timeA;
-  });
-  
-  return result;
+  // Sort descending by round start time
+  memberSessions.sort((a, b) => b.round.startTime - a.round.startTime);
+  return memberSessions;
 }
-
-// ── Component ─────────────────────────────────────────────────
 
 export default function MemberStatsPage() {
   const { t, locale } = useI18n();
@@ -333,8 +268,7 @@ export default function MemberStatsPage() {
         const deviceIds = await getDeviceFilter(deviceId);
         
         const [memberRow, ranking, sessions] = await Promise.all([
-          supabase.from('saved_members').select('*').eq('id', viewingMemberId).single()
-            .then(({ data }) => data as DbSavedMember | null),
+          getRepository().then(repo => repo.members.get(viewingMemberId)),
           fetchEvaluationRanking(deviceIds),
           fetchMemberSessions(deviceIds, viewingMemberId),
         ]);
@@ -570,7 +504,7 @@ export default function MemberStatsPage() {
     return (
       <div className="min-h-dvh pt-safe-24 px-4 pb-8 flex flex-col items-center justify-center text-center gap-3">
         <div className="text-5xl">📊</div>
-        <p className="font-bold text-zinc-700 dark:text-zinc-300">{t('memberStats.noData' as any)}</p>
+        <p className="font-bold text-zinc-700 dark:text-zinc-300">{t('memberStats.noData' as Parameters<typeof t>[0])}</p>
       </div>
     );
   }
@@ -590,8 +524,8 @@ export default function MemberStatsPage() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex flex-col items-center justify-center min-w-[70px] relative">
             <div className="flex items-center gap-1 mb-1">
-              <span className="text-xs text-zinc-500 font-bold uppercase">{t('memberStats.ptRank' as any)}</span>
-              <Tooltip content={t('memberStats.rankOf' as any)} align="left">
+              <span className="text-xs text-zinc-500 font-bold uppercase">{t('memberStats.ptRank' as Parameters<typeof t>[0])}</span>
+              <Tooltip content={t('memberStats.rankOf' as Parameters<typeof t>[0])} align="left">
                 <HelpCircle className="w-3.5 h-3.5 text-zinc-400 cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors" />
               </Tooltip>
             </div>
@@ -616,8 +550,8 @@ export default function MemberStatsPage() {
           
           <div className="flex flex-col items-center justify-center min-w-[70px] relative">
             <div className="flex items-center gap-1 mb-1">
-              <span className="text-xs text-zinc-500 font-bold uppercase">{t('memberStats.evalPoint' as any)}</span>
-              <Tooltip content={t('memberStats.evalPointTooltip' as any)} align="right">
+              <span className="text-xs text-zinc-500 font-bold uppercase">{t('memberStats.evalPoint' as Parameters<typeof t>[0])}</span>
+              <Tooltip content={t('memberStats.evalPointTooltip' as Parameters<typeof t>[0])} align="right">
                 <HelpCircle className="w-3.5 h-3.5 text-zinc-400 cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors" />
               </Tooltip>
             </div>
@@ -628,25 +562,25 @@ export default function MemberStatsPage() {
         </div>
 
         {stats.isEmpty ? (
-          <div className="text-center text-zinc-400 py-6 text-sm">{t('memberStats.noData' as any)}</div>
+          <div className="text-center text-zinc-400 py-6 text-sm">{t('memberStats.noData' as Parameters<typeof t>[0])}</div>
         ) : (
           <>
             {/* Middle Row: Games, High, Low, Avg */}
             <div className="grid grid-cols-4 gap-2 mb-6">
               <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-800/50 p-2.5 rounded-xl">
-                <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.totalGames' as any)}</span>
+                <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.totalGames' as Parameters<typeof t>[0])}</span>
                 <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.totalGames}</span>
               </div>
               <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-800/50 p-2.5 rounded-xl">
-                <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.highScore' as any)}</span>
+                <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.highScore' as Parameters<typeof t>[0])}</span>
                 <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.maxScore}</span>
               </div>
               <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-800/50 p-2.5 rounded-xl">
-                <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.lowScore' as any)}</span>
+                <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.lowScore' as Parameters<typeof t>[0])}</span>
                 <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.minScore}</span>
               </div>
               <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-800/50 p-2.5 rounded-xl">
-                <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.avgScore' as any)}</span>
+                <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.avgScore' as Parameters<typeof t>[0])}</span>
                 <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.avgScore}</span>
               </div>
             </div>
@@ -674,7 +608,7 @@ export default function MemberStatsPage() {
               : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
           }`}
         >
-          {t('memberStats.tab4Player' as any)}
+          {t('memberStats.tab4Player' as Parameters<typeof t>[0])}
         </button>
         <button
           onClick={() => { setGameTypeTab('3-player'); setVisibleHistoryCount(10); }}
@@ -684,14 +618,14 @@ export default function MemberStatsPage() {
               : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
           }`}
         >
-          {t('memberStats.tab3Player' as any)}
+          {t('memberStats.tab3Player' as Parameters<typeof t>[0])}
         </button>
       </div>
 
       {/* Card 2: Trend Chart */}
       {!stats.isEmpty && stats.chartRounds.length > 0 && viewingMemberId && (
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm relative">
-          <h2 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-4">{t('memberStats.recentTrend' as any)}</h2>
+          <h2 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-4">{t('memberStats.recentTrend' as Parameters<typeof t>[0])}</h2>
           <RankChart 
             rounds={stats.chartRounds}
             sortedPlayers={[[viewingMemberId, stats.pt]]}
@@ -704,7 +638,7 @@ export default function MemberStatsPage() {
       {/* Card 3: Match History */}
       {!stats.isEmpty && (
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-          <h2 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-4">{t('memberStats.matchHistory' as any)}</h2>
+          <h2 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-4">{t('memberStats.matchHistory' as Parameters<typeof t>[0])}</h2>
           <div className="space-y-4">
             {stats.history.slice(0, visibleHistoryCount).map((item) => {
               const time = item.round.endTime || item.round.startTime || new Date(item.playedAt).getTime();
@@ -754,7 +688,7 @@ export default function MemberStatsPage() {
               onClick={() => setVisibleHistoryCount(prev => prev + 10)}
               className="w-full mt-4 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/50 dark:hover:bg-zinc-800 rounded-xl transition-colors"
             >
-              {t('memberStats.loadMore' as any)}
+              {t('memberStats.loadMore' as Parameters<typeof t>[0])}
             </button>
           )}
         </div>
@@ -788,16 +722,16 @@ export default function MemberStatsPage() {
           <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-3xl rounded-full" />
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 blur-3xl rounded-full" />
 
-          <h1 className="text-xl font-black text-center mb-2 tracking-wider text-zinc-900 dark:text-zinc-100">{t('personal.memberManageLabel' as any)}</h1>
+          <h1 className="text-xl font-black text-center mb-2 tracking-wider text-zinc-900 dark:text-zinc-100">{t('personal.memberManageLabel' as Parameters<typeof t>[0])}</h1>
           <div className="text-center text-zinc-600 dark:text-zinc-500 text-xs mb-8">
-            <div>{new Date().toLocaleDateString()} • {gameTypeTab === '4-player' ? t('memberStats.tab4Player' as any) : t('memberStats.tab3Player' as any)}</div>
+            <div>{new Date().toLocaleDateString()} • {gameTypeTab === '4-player' ? t('memberStats.tab4Player' as Parameters<typeof t>[0]) : t('memberStats.tab3Player' as Parameters<typeof t>[0])}</div>
           </div>
 
           <div className="mb-6 relative z-10">
             <div className="flex items-center justify-between mb-8">
               <div className="flex flex-col items-center justify-center min-w-[70px] relative">
                 <div className="flex items-center gap-1 mb-1">
-                  <span className="text-xs text-zinc-500 font-bold uppercase">{t('memberStats.ptRank' as any)}</span>
+                  <span className="text-xs text-zinc-500 font-bold uppercase">{t('memberStats.ptRank' as Parameters<typeof t>[0])}</span>
                 </div>
                 <div className="flex items-baseline gap-1">
                   <span className="text-3xl font-black text-zinc-900 dark:text-zinc-100">
@@ -820,7 +754,7 @@ export default function MemberStatsPage() {
               
               <div className="flex flex-col items-center justify-center min-w-[70px] relative">
                 <div className="flex items-center gap-1 mb-1">
-                  <span className="text-xs text-zinc-500 font-bold uppercase">{t('memberStats.evalPoint' as any)}</span>
+                  <span className="text-xs text-zinc-500 font-bold uppercase">{t('memberStats.evalPoint' as Parameters<typeof t>[0])}</span>
                 </div>
                 <span className={`text-3xl font-black ${stats.pt >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                   {stats.pt > 0 ? '+' : ''}{stats.pt.toFixed(1)}
@@ -832,19 +766,19 @@ export default function MemberStatsPage() {
               <>
                 <div className="grid grid-cols-4 gap-2 mb-4">
                   <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/80">
-                    <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.totalGames' as any)}</span>
+                    <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.totalGames' as Parameters<typeof t>[0])}</span>
                     <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.totalGames}</span>
                   </div>
                   <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/80">
-                    <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.highScore' as any)}</span>
+                    <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.highScore' as Parameters<typeof t>[0])}</span>
                     <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.maxScore}</span>
                   </div>
                   <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/80">
-                    <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.lowScore' as any)}</span>
+                    <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.lowScore' as Parameters<typeof t>[0])}</span>
                     <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.minScore}</span>
                   </div>
                   <div className="flex flex-col items-center bg-zinc-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/80">
-                    <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.avgScore' as any)}</span>
+                    <span className="text-[10px] text-zinc-500 mb-1">{t('memberStats.avgScore' as Parameters<typeof t>[0])}</span>
                     <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.avgScore}</span>
                   </div>
                 </div>
@@ -863,7 +797,7 @@ export default function MemberStatsPage() {
 
           {!stats.isEmpty && stats.chartRounds.length > 0 && viewingMemberId && (
             <div className="mb-6 relative z-10 pt-4">
-              <h2 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-4">{t('memberStats.recentTrend' as any)}</h2>
+              <h2 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-4">{t('memberStats.recentTrend' as Parameters<typeof t>[0])}</h2>
               <div className="bg-zinc-50 dark:bg-zinc-900/60 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800/80">
                 <RankChart 
                   rounds={stats.chartRounds}

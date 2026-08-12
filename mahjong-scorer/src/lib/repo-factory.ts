@@ -23,7 +23,7 @@ let _initPromise: Promise<IRepository> | null = null;
  *  2. isNativePlatform 是一个返回 true 的函数（Capacitor 真实 API）
  *  3. getPlatform() 返回 'android' 或 'ios'（而非 'web'）
  */
-function isNativePlatform(): boolean {
+export function isNativePlatform(): boolean {
   if (typeof window === 'undefined') return false;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

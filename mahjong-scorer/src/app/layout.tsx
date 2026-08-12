@@ -9,6 +9,7 @@ import AuthModal from '@/components/AuthModal';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import SyncScreen from '@/components/SyncScreen';
 import ConnectionGuard from '@/components/ConnectionGuard';
+import ToastContainer from '@/components/ToastContainer';
 import './globals.css';
 
 const notoSansJP = Noto_Sans_JP({
@@ -37,7 +38,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#09090b',
+  themeColor: '#ffffff',
 };
 
 export default function RootLayout({
@@ -62,6 +63,7 @@ export default function RootLayout({
               <AuthModal />
               <UpgradePrompt />
               <SyncScreen />
+              <ToastContainer />
               <div className="overflow-x-hidden w-full flex flex-col min-h-dvh">
                 {children}
               </div>

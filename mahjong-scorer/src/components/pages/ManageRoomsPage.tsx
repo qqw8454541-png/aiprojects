@@ -203,7 +203,7 @@ export default function ManageRoomsPage() {
                       <button onClick={() => { setEditingId(room.id); setEditName(room.name); }} className="px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm font-medium">{t('manage.editName')}</button>
                     )}
                     <button onClick={() => handleViewHistory(room.id)} className="px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-sm font-medium border border-blue-200 dark:border-blue-800/50">{t('manage.viewHistory')}</button>
-                    <button onClick={() => handleStart(room.id)} disabled={loadingId === room.id} className="px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-sm font-medium border border-emerald-200 dark:border-emerald-800/50">{loadingId === room.id ? '...' : (t('savedRooms.startGame' as any))}</button>
+                    <button onClick={() => handleStart(room.id)} disabled={loadingId === room.id} className="px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-sm font-medium border border-emerald-200 dark:border-emerald-800/50">{loadingId === room.id ? '...' : (t('savedRooms.startGame' as Parameters<typeof t>[0]))}</button>
                     <button onClick={() => handleDelete(room.id, room.name)} className="px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 text-sm font-medium border border-red-200 dark:border-red-800/50">{t('manage.deleteRoom')}</button>
                   </div>
                 </div>
@@ -357,7 +357,7 @@ function MemberItem({
           onClick={(e) => { e.stopPropagation(); onViewStats(); }}
           className="px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-bold border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
         >
-          📊 {t('memberStats.viewStats' as any)}
+          📊 {t('memberStats.viewStats' as Parameters<typeof t>[0])}
         </button>
         <div className="flex items-center text-zinc-300 dark:text-zinc-600 pointer-events-none gap-2">
           <div className="flex flex-col items-end opacity-60">

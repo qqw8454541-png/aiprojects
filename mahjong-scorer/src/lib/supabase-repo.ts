@@ -139,6 +139,57 @@ class SupabaseMemberRepository implements IMemberRepository {
       .eq('id', id);
     if (error) throw error;
   }
+
+  async mergeMembers(targetId: string, sourceIds: string[]): Promise<void> {
+    if (!sourceIds.length) return;
+    
+    // 1. Update session_players
+    const { error: spErr } = await supabase
+      .from('session_players')
+      .update({ saved_member_id: targetId })
+      .in('saved_member_id', sourceIds);
+    if (spErr) throw spErr;
+
+    // 2. Update room_members
+    const allIds = [targetId, ...sourceIds];
+    const { data: rmData } = await supabase
+      .from('room_members')
+      .select('room_id, member_id')
+      .in('member_id', allIds);
+    
+    if (rmData && rmData.length > 0) {
+      const roomMap = new Map<string, string[]>();
+      for (const row of rmData) {
+        if (!roomMap.has(row.room_id)) roomMap.set(row.room_id, []);
+        roomMap.get(row.room_id)!.push(row.member_id);
+      }
+      
+      for (const [roomId, members] of roomMap.entries()) {
+        const hasTarget = members.includes(targetId);
+        const sourceMembers = members.filter(m => sourceIds.includes(m));
+        
+        if (sourceMembers.length > 0) {
+          if (hasTarget) {
+            await supabase.from('room_members').delete().eq('room_id', roomId).in('member_id', sourceIds);
+          } else {
+            const firstSource = sourceMembers[0];
+            await supabase.from('room_members').update({ member_id: targetId }).eq('room_id', roomId).eq('member_id', firstSource);
+            if (sourceMembers.length > 1) {
+              const remainingSourceIds = sourceMembers.slice(1);
+              await supabase.from('room_members').delete().eq('room_id', roomId).in('member_id', remainingSourceIds);
+            }
+          }
+        }
+      }
+    }
+
+    // 3. Soft delete the source members
+    const { error: smErr } = await supabase
+      .from('saved_members')
+      .update({ avatar_seed: '__DELETED__' })
+      .in('id', sourceIds);
+    if (smErr) throw smErr;
+  }
 }
 
 // ────────────────────────── Room Members ──────────────────────
@@ -270,6 +321,44 @@ class SupabaseRoomRepository implements IRoomRepository {
   async delete(id: string): Promise<void> {
     const { error } = await supabase.from('saved_rooms').delete().eq('id', id);
     if (error) throw error;
+  }
+
+  async mergeRooms(targetId: string, sourceIds: string[]): Promise<void> {
+    if (!sourceIds.length) return;
+    
+    // 1. Update completed_sessions
+    const { error: csErr } = await supabase
+      .from('completed_sessions')
+      .update({ saved_room_id: targetId })
+      .in('saved_room_id', sourceIds);
+    if (csErr) throw csErr;
+    
+    // 2. Add any unique members from source rooms to target room
+    const { data: targetMembers } = await supabase.from('room_members').select('member_id, sort_order').eq('room_id', targetId);
+    const targetMemberIds = new Set(targetMembers?.map(m => m.member_id) || []);
+    let maxSortOrder = targetMembers?.length ? Math.max(...targetMembers.map(m => m.sort_order)) : -1;
+    
+    const { data: sourceMembers } = await supabase.from('room_members').select('member_id').in('room_id', sourceIds);
+    const newMembers = new Set<string>();
+    for (const sm of sourceMembers || []) {
+      if (!targetMemberIds.has(sm.member_id)) {
+        newMembers.add(sm.member_id);
+        targetMemberIds.add(sm.member_id);
+      }
+    }
+    
+    if (newMembers.size > 0) {
+      const insertRows = Array.from(newMembers).map(memberId => ({
+        room_id: targetId,
+        member_id: memberId,
+        sort_order: ++maxSortOrder
+      }));
+      await supabase.from('room_members').insert(insertRows);
+    }
+    
+    // 3. Delete source rooms
+    const { error: srErr } = await supabase.from('saved_rooms').delete().in('id', sourceIds);
+    if (srErr) throw srErr;
   }
 }
 

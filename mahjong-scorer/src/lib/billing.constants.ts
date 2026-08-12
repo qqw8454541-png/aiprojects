@@ -54,4 +54,7 @@ export const BILLING_CONFIG = {
    * 購入レシートのサーバーサイド二重検証を実装すること。
    */
   VALIDATOR_URL: '',
+
+  /** Supabase Edge Function の収据検証 URL */
+  VERIFY_PURCHASE_URL: 'https://xkpebhhwkuqrywqckrlu.supabase.co/functions/v1/verify-purchase',
 } as const;

@@ -47,8 +47,8 @@ export default function Home() {
           // Sync native StatusBar color with app theme
           if (Capacitor.isNativePlatform()) {
             import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
-              StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
-              StatusBar.setBackgroundColor({ color: '#09090b' }).catch(() => {});
+              StatusBar.setStyle({ style: Style.Light }).catch(() => {});
+              StatusBar.setBackgroundColor({ color: '#ffffff' }).catch(() => {});
             }).catch(() => {});
           }
         } catch (e) {}

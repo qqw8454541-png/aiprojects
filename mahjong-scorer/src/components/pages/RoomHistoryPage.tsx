@@ -101,11 +101,11 @@ export default function RoomHistoryPage() {
 
                     {completedRounds.length > 0 && (
                       <>
-                        <div className="font-medium text-xs text-zinc-500 mb-2 border-t border-zinc-100 dark:border-zinc-800 pt-3">{t('history.roundDetails' as any)}</div>
+                        <div className="font-medium text-xs text-zinc-500 mb-2 border-t border-zinc-100 dark:border-zinc-800 pt-3">{t('history.roundDetails' as Parameters<typeof t>[0])}</div>
                         <div className="space-y-3">
                           {completedRounds.map((r) => (
                             <div key={r.id} className="bg-zinc-50 dark:bg-zinc-800/30 rounded-lg p-2 text-xs">
-                              <div className="text-zinc-400 mb-1">{t('history.hanchan' as any)} {r.round_number}</div>
+                              <div className="text-zinc-400 mb-1">{t('history.hanchan' as Parameters<typeof t>[0])} {r.round_number}</div>
                               <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                                 {r.results?.map(res => {
                                   const name = players.find((p) => p.player_id === res.player_id)?.player_name ?? res.player_name;

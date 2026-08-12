@@ -87,6 +87,7 @@ export interface IMemberRepository {
   list(deviceId: string): Promise<DbSavedMember[]>;
   upsert(member: Omit<DbSavedMember, 'created_at'>): Promise<DbSavedMember>;
   delete(id: string): Promise<void>;
+  mergeMembers(targetId: string, sourceIds: string[]): Promise<void>;
 }
 
 export interface IRoomMemberRepository {
@@ -108,6 +109,7 @@ export interface IRoomRepository {
     patch: Partial<{ name: string; rules: RuleConfig }>
   ): Promise<void>;
   delete(id: string): Promise<void>;
+  mergeRooms(targetId: string, sourceIds: string[]): Promise<void>;
 }
 
 export interface ISessionRepository {

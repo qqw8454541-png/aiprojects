@@ -33,17 +33,17 @@ export default function AiErrorModal({ isOpen, errorType, details, onClose }: Ai
   let colorClass = 'bg-amber-500/10 border-amber-500/20';
 
   if (errorType === 'RATE_LIMIT_EXCEEDED') {
-    title = t('eval.quotaExceeded' as any);
+    title = t('eval.quotaExceeded' as Parameters<typeof t>[0]);
     description = 'API request limit reached. Please wait a moment before trying again or upgrade your plan.';
     icon = <Hourglass className="w-12 h-12 text-amber-500 animate-pulse" />;
     colorClass = 'bg-amber-500/10 border-amber-500/20 text-amber-500';
   } else if (errorType === 'NETWORK_ERROR') {
-    title = t('eval.connectionError' as any);
+    title = t('eval.connectionError' as Parameters<typeof t>[0]);
     description = 'Could not connect to the service. Please check your internet connection, credentials, or VPN configuration.';
     icon = <WifiOff className="w-12 h-12 text-blue-500" />;
     colorClass = 'bg-blue-500/10 border-blue-500/20 text-blue-500';
   } else if (errorType === 'SERVICE_ERROR') {
-    title = t('eval.apiError' as any);
+    title = t('eval.apiError' as Parameters<typeof t>[0]);
     description = 'The AI service experienced an issue or returned unexpected data. Please try again.';
     icon = <ServerCrash className="w-12 h-12 text-rose-500" />;
     colorClass = 'bg-rose-500/10 border-rose-500/20 text-rose-500';
@@ -131,7 +131,7 @@ export default function AiErrorModal({ isOpen, errorType, details, onClose }: Ai
               onClick={onClose}
               className="w-full py-3.5 rounded-2xl bg-zinc-950 dark:bg-zinc-50 text-white dark:text-zinc-950 font-bold text-sm transition-all hover:brightness-110 active:scale-[0.98] shadow-md"
             >
-              {t('common.confirm' as any)}
+              {t('common.confirm' as Parameters<typeof t>[0])}
             </button>
           </div>
         </motion.div>

@@ -43,17 +43,17 @@ export default function SyncScreen() {
                 <CheckCircle2 size={40} />
               </motion.div>
               <h2 className="text-2xl font-black mb-2 text-zinc-900 dark:text-zinc-100">
-                {t('sync.doneTitle' as any)}
+                {t('sync.doneTitle' as Parameters<typeof t>[0])}
               </h2>
               <p className="text-zinc-500 mb-8 font-medium">
-                {t('sync.doneDesc1' as any)}<br />
-                {t('sync.doneDesc2' as any)}
+                {t('sync.doneDesc1' as Parameters<typeof t>[0])}<br />
+                {t('sync.doneDesc2' as Parameters<typeof t>[0])}
               </p>
               <button 
                 onClick={() => setSyncState({ isSyncing: false, progress: null })}
                 className="w-full py-4 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-2xl font-bold active:scale-95 transition-transform"
               >
-                {t('sync.doneBtn' as any)}
+                {t('sync.doneBtn' as Parameters<typeof t>[0])}
               </button>
             </>
           ) : isError ? (
@@ -67,18 +67,18 @@ export default function SyncScreen() {
                 <AlertTriangle size={40} />
               </motion.div>
               <h2 className="text-2xl font-black mb-2 text-zinc-900 dark:text-zinc-100">
-                {t('sync.errorTitle' as any)}
+                {t('sync.errorTitle' as Parameters<typeof t>[0])}
               </h2>
               <p className="text-zinc-500 mb-8 font-medium">
-                {p.message || t('sync.errorDefault' as any)}
+                {p.message || t('sync.errorDefault' as Parameters<typeof t>[0])}
                 <br /><br />
-                {t('sync.errorDesc' as any)}
+                {t('sync.errorDesc' as Parameters<typeof t>[0])}
               </p>
               <button 
                 onClick={() => setSyncState({ isSyncing: false, progress: null })}
                 className="w-full py-4 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-2xl font-bold active:scale-95 transition-transform"
               >
-                {t('sync.errorBtn' as any)}
+                {t('sync.errorBtn' as Parameters<typeof t>[0])}
               </button>
             </>
           ) : (
@@ -93,7 +93,7 @@ export default function SyncScreen() {
               </div>
               
               <h2 className="text-2xl font-black mb-2 text-zinc-900 dark:text-zinc-100">
-                {t('sync.syncingTitle' as any)}
+                {t('sync.syncingTitle' as Parameters<typeof t>[0])}
               </h2>
               
               <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-3 mb-3 overflow-hidden">
@@ -110,7 +110,7 @@ export default function SyncScreen() {
               </div>
               
               <p className="text-zinc-500 text-sm font-medium">
-                {p?.message || t('sync.syncingDesc' as any)}
+                {p?.message || t('sync.syncingDesc' as Parameters<typeof t>[0])}
               </p>
             </>
           )}

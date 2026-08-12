@@ -25,6 +25,40 @@ function check_prerequisites() {
     fi
 }
 
+function bump_version() {
+    echo -e "${BLUE}========================================${NC}"
+    echo -e "${YELLOW}[0/4] Auto-incrementing Android versionCode...${NC}"
+    echo -e "${BLUE}========================================${NC}"
+    
+    local gradle_file="android/app/build.gradle"
+    if [ ! -f "$gradle_file" ]; then
+        echo -e "${RED}Error: $gradle_file not found.${NC}"
+        exit 1
+    fi
+
+    # 提取当前的 versionCode
+    local current_code=$(grep "versionCode " "$gradle_file" | awk '{print $2}')
+    if [ -z "$current_code" ]; then
+        echo -e "${RED}Error: Could not find versionCode in $gradle_file.${NC}"
+        exit 1
+    fi
+    
+    local new_code=$((current_code + 1))
+    
+    # 替换 versionCode
+    sed -i "s/versionCode ${current_code}/versionCode ${new_code}/g" "$gradle_file"
+    
+    # 也顺便更新 package.json
+    npm version patch --no-git-tag-version > /dev/null 2>&1 || true
+    local new_name=$(node -p "require('./package.json').version")
+    
+    # 替换 versionName
+    sed -i -E "s/versionName \"[^\"]+\"/versionName \"${new_name}\"/g" "$gradle_file"
+    
+    echo -e "${GREEN}Bumped versionCode: ${current_code} -> ${new_code}${NC}"
+    echo -e "${GREEN}Bumped versionName: -> ${new_name}${NC}"
+}
+
 function build_web() {
     echo -e "${BLUE}========================================${NC}"
     echo -e "${YELLOW}[1/4] Building Next.js Web App...${NC}"
@@ -47,12 +81,24 @@ function build_aab() {
     ./gradlew "${target}"
     cd ..
 
+    local version_name=$(node -p "require('./package.json').version")
+
     echo -e "${GREEN}========================================${NC}"
     echo -e "${GREEN}AAB Build Completed Successfully!${NC}"
     if [ "${target}" = "bundleRelease" ]; then
-        echo -e "${GREEN}AAB file is located at:${NC} android/app/build/outputs/bundle/release/app-release.aab"
+        local original_aab="android/app/build/outputs/bundle/release/app-release.aab"
+        local new_aab="android/app/build/outputs/bundle/release/app-v${version_name}-release.aab"
+        if [ -f "$original_aab" ]; then
+            mv "$original_aab" "$new_aab"
+        fi
+        echo -e "${GREEN}AAB file is located at:${NC} ${new_aab}"
     else
-        echo -e "${GREEN}AAB file is located at:${NC} android/app/build/outputs/bundle/debug/app-debug.aab"
+        local original_aab="android/app/build/outputs/bundle/debug/app-debug.aab"
+        local new_aab="android/app/build/outputs/bundle/debug/app-v${version_name}-debug.aab"
+        if [ -f "$original_aab" ]; then
+            mv "$original_aab" "$new_aab"
+        fi
+        echo -e "${GREEN}AAB file is located at:${NC} ${new_aab}"
     fi
     echo -e "${GREEN}========================================${NC}"
 }
@@ -64,10 +110,18 @@ function build_apk() {
     cd android
     ./gradlew assembleDebug
     cd ..
+    
+    local version_name=$(node -p "require('./package.json').version")
+    local original_apk="android/app/build/outputs/apk/debug/app-debug.apk"
+    local new_apk="android/app/build/outputs/apk/debug/app-v${version_name}-debug.apk"
+    
+    if [ -f "$original_apk" ]; then
+        mv "$original_apk" "$new_apk"
+    fi
 
     echo -e "${GREEN}========================================${NC}"
     echo -e "${GREEN}Build Completed Successfully!${NC}"
-    echo -e "${GREEN}APK is located at:${NC} android/app/build/outputs/apk/debug/app-debug.apk"
+    echo -e "${GREEN}APK is located at:${NC} ${new_apk}"
     echo -e "${GREEN}========================================${NC}"
 }
 
@@ -95,6 +149,11 @@ function run_sync() {
 
 function run_aab() {
     local target="${1:-bundleRelease}"
+    
+    if [ "$target" = "bundleRelease" ]; then
+        bump_version
+    fi
+
     build_web
 
     echo -e "${BLUE}========================================${NC}"

@@ -30,9 +30,13 @@ function notifySyncState(isSyncing: boolean) {
 const PERIODIC_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 
 class SyncEngine {
-  private isRunning: boolean = false;
+  private _isRunning: boolean = false;
   private periodicTimer: ReturnType<typeof setInterval> | null = null;
   private visibilityHandler: (() => void) | null = null;
+
+  get isRunning(): boolean {
+    return this._isRunning;
+  }
 
   private async getLocalRepo() {
     const repo = await getRepository();
@@ -42,8 +46,8 @@ class SyncEngine {
 
   // Called when upgrading to Pro
   async fullSync(onProgress: (p: SyncProgress) => void): Promise<{ success: boolean; error?: string }> {
-    if (this.isRunning) return { success: false, error: 'Already syncing' };
-    this.isRunning = true;
+    if (this._isRunning) return { success: false, error: 'Already syncing' };
+    this._isRunning = true;
     notifySyncState(true);
     
     try {
@@ -186,21 +190,21 @@ class SyncEngine {
       onProgress({ phase: 'error', current: 0, total: 100, message: err.message });
       return { success: false, error: err.message };
     } finally {
-      this.isRunning = false;
+      this._isRunning = false;
       notifySyncState(false);
     }
   }
 
   // Background incremental sync
   async incrementalSync(): Promise<void> {
-    if (this.isRunning) return;
+    if (this._isRunning) return;
     const { user, isPro } = useAuthStore.getState();
     if (!user || !isPro) return;
     
     const deviceId = useGameStore.getState().deviceId;
     if (!deviceId) return;
 
-    this.isRunning = true;
+    this._isRunning = true;
     notifySyncState(true);
     try {
       const localRepo = await this.getLocalRepo();
@@ -289,7 +293,7 @@ class SyncEngine {
     } catch (e) {
       console.error('Incremental sync failed', e);
     } finally {
-      this.isRunning = false;
+      this._isRunning = false;
       notifySyncState(false);
     }
   }

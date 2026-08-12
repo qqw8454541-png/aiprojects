@@ -113,10 +113,10 @@ export default function PersonalMenuPage() {
         >
           <div className="flex items-center gap-2">
             <span className="text-xl group-hover:scale-110 transition-transform">🏠</span>
-            <span className="font-bold text-zinc-900 dark:text-zinc-100">{t('personal.roomManageLabel' as any)}</span>
+            <span className="font-bold text-zinc-900 dark:text-zinc-100">{t('personal.roomManageLabel' as Parameters<typeof t>[0])}</span>
           </div>
           <div className="text-[11px] leading-snug text-zinc-500 dark:text-zinc-400 font-medium">
-            {t('personal.roomManageHint' as any)}
+            {t('personal.roomManageHint' as Parameters<typeof t>[0])}
           </div>
         </button>
 
@@ -131,10 +131,10 @@ export default function PersonalMenuPage() {
         >
           <div className="flex items-center gap-2">
             <span className="text-xl group-hover:scale-110 transition-transform">👥</span>
-            <span className="font-bold text-zinc-900 dark:text-zinc-100">{t('personal.memberManageLabel' as any)}</span>
+            <span className="font-bold text-zinc-900 dark:text-zinc-100">{t('personal.memberManageLabel' as Parameters<typeof t>[0])}</span>
           </div>
           <div className="text-[11px] leading-snug text-zinc-500 dark:text-zinc-400 font-medium">
-            {t('personal.memberManageHint' as any)}
+            {t('personal.memberManageHint' as Parameters<typeof t>[0])}
           </div>
         </button>
       </div>

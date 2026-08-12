@@ -514,7 +514,7 @@ export default function RoomPage() {
             >
               <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
                 <h3 className="font-bold text-zinc-900 dark:text-zinc-100">
-                  {t('room.newTeamTitle' as any)}
+                  {t('room.newTeamTitle' as Parameters<typeof t>[0])}
                 </h3>
               </div>
               <div className="p-6 space-y-4">

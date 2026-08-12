@@ -105,7 +105,7 @@ export default function RankChart({ rounds, sortedPlayers, playerNamesMap, playe
     <div className={`w-full relative ${playerId ? 'mt-2 mb-2' : 'bg-zinc-50 dark:bg-zinc-800/60 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700/30 overflow-hidden mb-4'}`}>
       {!playerId && (
         <div className="text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-2 tracking-wider">
-          {t('report.rankTrend' as any)}
+          {t('report.rankTrend' as Parameters<typeof t>[0])}
         </div>
       )}
       
@@ -275,7 +275,7 @@ export default function RankChart({ rounds, sortedPlayers, playerNamesMap, playe
             exit={{ opacity: 0 }}
             className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 dark:bg-white/20 text-white text-[10px] px-3 py-1 rounded-full pointer-events-none backdrop-blur-sm z-10 whitespace-nowrap"
           >
-            {t('report.dragHint' as any)}
+            {t('report.dragHint' as Parameters<typeof t>[0])}
           </motion.div>
         )}
       </AnimatePresence>

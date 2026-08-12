@@ -197,6 +197,12 @@ class BillingServiceImpl {
           });
         }
         // 无错误 → 购买流程继续在事件链中处理
+      }).catch((e: any) => {
+        this._resolvePurchase({
+          success: false,
+          error: 'order_exception',
+          message: e.message || 'Exception while ordering.',
+        });
       });
     });
   }
@@ -225,6 +231,26 @@ class BillingServiceImpl {
     } catch (e) {
       console.error('[billing] Restore purchases failed:', e);
       return false;
+    }
+  }
+
+  // ── 管理订阅 ────────────────────────────────────────────────────
+
+  /**
+   * 打开系统商店的订阅管理页面。
+   */
+  async manageSubscriptions(): Promise<void> {
+    if (!this.isNative) return;
+
+    const cdv = getCdvPurchase();
+    if (!cdv) return;
+
+    await this.init();
+
+    try {
+      cdv.store.manageSubscriptions();
+    } catch (e) {
+      console.error('[billing] Failed to open manage subscriptions:', e);
     }
   }
 
@@ -257,7 +283,7 @@ class BillingServiceImpl {
     if (!cdv || !this.initialized) return null;
 
     const product = cdv.store.get(BILLING_CONFIG.PRODUCT_ID);
-    const offer = product?.getOffer();
+    const offer = product?.getOffer() || product?.offers?.[0];
     return offer?.pricingPhases?.[0]?.price
       ?? product?.pricing?.price
       ?? null;
@@ -308,21 +334,33 @@ class BillingServiceImpl {
     }
 
     const { supabase } = await import('./supabase');
-    const { error } = await supabase
-      .from('profiles')
-      .upsert(
-        {
-          user_id: user.id,
-          tier: 'pro',
-          pro_since: new Date().toISOString(),
-          subscription_platform: Capacitor.getPlatform() as 'android' | 'ios',
-          subscription_product_id: BILLING_CONFIG.PRODUCT_ID,
-        },
-        { onConflict: 'user_id' }
-      );
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.error('[billing] No session — cannot verify purchase');
+      return;
+    }
 
-    if (error) {
-      console.error('[billing] Failed to update profile tier:', error);
+    const resp = await fetch(
+      BILLING_CONFIG.VERIFY_PURCHASE_URL,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          purchaseToken: _receipt.sourceReceipt?.transactions?.[0]?.purchaseId || _receipt.collection?.[0]?.purchaseId || 'unknown_token',
+          productId: BILLING_CONFIG.PRODUCT_ID,
+          packageName: 'com.mahjongscorer.app',
+        }),
+      }
+    );
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      console.error('[billing] Server verification failed:', err);
+    } else {
+      console.log('[billing] Server verification succeeded.');
     }
   }
 }

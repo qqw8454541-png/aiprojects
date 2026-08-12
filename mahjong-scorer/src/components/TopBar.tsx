@@ -123,9 +123,9 @@ export default function TopBar() {
     } else if (currentPage === 'profile') {
       Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('profile.title')}</h1>;
     } else if (currentPage === 'manage-rooms') {
-      Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{manageRoomsMode === 'rooms' ? t('personal.roomManageLabel' as any) : t('personal.memberManageLabel' as any)}</h1>;
+      Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{manageRoomsMode === 'rooms' ? t('personal.roomManageLabel' as Parameters<typeof t>[0]) : t('personal.memberManageLabel' as Parameters<typeof t>[0])}</h1>;
     } else if (currentPage === 'member-stats') {
-      Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('memberStats.title' as any)}</h1>;
+      Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('memberStats.title' as Parameters<typeof t>[0])}</h1>;
     } else if (currentPage === 'room-history') {
       Title = <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{t('history.title')}</h1>;
     }

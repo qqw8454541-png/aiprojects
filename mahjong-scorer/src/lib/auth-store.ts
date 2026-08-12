@@ -18,8 +18,9 @@ import { Capacitor } from '@capacitor/core';
 import { syncEngine } from './sync-engine';
 import { billingService } from './billing-service';
 import { getSavedLocale, translate } from './i18n';
+import { showToast } from './toast-store';
 
-export type AuthProvider = 'google' | 'apple' | 'email' | 'phone';
+export type AuthProvider = 'email' | 'phone';
 
 // ────────────────────────── Types ──────────────────────────────
 
@@ -42,6 +43,10 @@ interface AuthState {
   // Sync State
   syncState: { isSyncing: boolean; progress: any | null };
   setSyncState: (state: Partial<{ isSyncing: boolean; progress: any | null }>) => void;
+
+  // ── Subscription ──────────────────────────────────────────
+  subscriptionExpiresAt: string | null;
+  subscriptionPlatform: 'android' | 'ios' | null;
 
   // ── Computed ──────────────────────────────────────────────
   isPro: boolean;
@@ -83,6 +88,9 @@ export const useAuthStore = create<AuthState>()(
       syncState: { isSyncing: false, progress: null },
       setSyncState: (state) => set((prev) => ({ syncState: { ...prev.syncState, ...state } })),
 
+      subscriptionExpiresAt: null,
+      subscriptionPlatform: null,
+
       // ── Computed ────────────────────────────────────────────
 
       isPro: false,
@@ -106,23 +114,7 @@ export const useAuthStore = create<AuthState>()(
       // ── Auth Actions ────────────────────────────────────────
 
       login: async (provider, credential?) => {
-        try {
-          if (provider === 'google' || provider === 'apple') {
-            const { error } = await supabase.auth.signInWithOAuth({
-              provider,
-              options: {
-                redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
-              }
-            });
-            if (error) throw error;
-            // For OAuth, the redirect handles the session, so we don't set user immediately here.
-            return { success: true };
-          }
-          
-          return { success: false, error: 'unsupported_provider' };
-        } catch (e: any) {
-          return { success: false, error: e.message || 'unknown_error' };
-        }
+        return { success: false, error: 'unsupported_provider' };
       },
 
       logout: async () => {
@@ -130,7 +122,10 @@ export const useAuthStore = create<AuthState>()(
         set({
           user: null,
           isLoggedIn: false,
-          // 保留 tier（与设备绑定，不随登出清除）
+          tier: 'free',
+          isPro: false,
+          subscriptionExpiresAt: null,
+          subscriptionPlatform: null,
         });
       },
 
@@ -155,7 +150,7 @@ export const useAuthStore = create<AuthState>()(
           try {
             const { data, error } = await supabase
               .from('profiles')
-              .select('tier')
+              .select('tier, subscription_expires_at, subscription_platform')
               .eq('user_id', userId)
               .single();
             if (error) {
@@ -166,13 +161,40 @@ export const useAuthStore = create<AuthState>()(
               } else {
                 console.error('Failed to fetch tier:', error);
               }
-            } else if (data?.tier) {
-              set({ tier: data.tier as any, isPro: data.tier === 'pro' });
+            } else if (data) {
+              let currentTier = data.tier;
+              // Check if subscription has expired
+              if (currentTier === 'pro' && data.subscription_expires_at) {
+                const expiresAt = new Date(data.subscription_expires_at).getTime();
+                if (Date.now() > expiresAt) {
+                  currentTier = 'free';
+                  // Optimistically update DB
+                  supabase.from('profiles').update({ tier: 'free' }).eq('user_id', userId).then();
+                }
+              }
+              
+              set({ 
+                tier: currentTier as any, 
+                isPro: currentTier === 'pro',
+                subscriptionExpiresAt: data.subscription_expires_at,
+                subscriptionPlatform: data.subscription_platform as any,
+              });
             }
           } catch (e) {
             console.error('Failed to fetch tier:', e);
           }
         };
+
+        // Initialize billing service globally on startup to prefetch prices
+        billingService.init().then(() => {
+          billingService.onEntitlementChanged((isEntitled) => {
+            if (isEntitled) {
+              get().upgradeToPro();
+            } else {
+              get().downgradeToFree();
+            }
+          });
+        }).catch(e => console.error('Billing init failed on load:', e));
 
         // Initial session check
         supabase.auth.getSession().then(async ({ data: { session }, error }) => {
@@ -182,7 +204,7 @@ export const useAuthStore = create<AuthState>()(
             if (error.name === 'AuthApiError') {
               supabase.auth.signOut().catch(() => {});
               if (typeof window !== 'undefined') {
-                alert(translate(getSavedLocale(), 'auth.sessionExpired' as any));
+                showToast(translate(getSavedLocale(), 'auth.sessionExpired' as any), 'error');
               }
             }
             markAuthReady(); // 即使出错也要放行，否则查询永远挂起
@@ -209,24 +231,10 @@ export const useAuthStore = create<AuthState>()(
               console.error('Device claim/sync failed on load:', e);
             }
 
-            // 初始化付费 SDK 并监听权限变化
-            try {
-              await billingService.init();
-              // 从商店同步权限状态（用户可能在其他设备购买/取消了订阅）
-              const storeOwned = billingService.checkEntitlement();
-              if (storeOwned && !get().isPro) {
-                get().upgradeToPro();
-              }
-              // 监听后续权限变化
-              billingService.onEntitlementChanged((isEntitled) => {
-                if (isEntitled) {
-                  get().upgradeToPro();
-                } else {
-                  get().downgradeToFree();
-                }
-              });
-            } catch (e) {
-              console.error('Billing init failed on load:', e);
+            // 从商店同步权限状态（若 SDK 已初始化，用户可能在其他设备购买了订阅）
+            const storeOwned = billingService.checkEntitlement();
+            if (storeOwned && !get().isPro) {
+              get().upgradeToPro();
             }
           }
           markAuthReady(); // Session 恢复完毕，放行所有等待中的数据查询
@@ -274,6 +282,8 @@ export const useAuthStore = create<AuthState>()(
         isLoggedIn: state.isLoggedIn,
         tier: state.tier,
         isPro: state.isPro,
+        subscriptionExpiresAt: state.subscriptionExpiresAt,
+        subscriptionPlatform: state.subscriptionPlatform,
       }),
     }
   )

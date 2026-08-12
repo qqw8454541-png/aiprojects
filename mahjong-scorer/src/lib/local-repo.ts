@@ -218,6 +218,70 @@ class LocalMemberRepository implements IMemberRepository {
       [now, now, id]
     );
   }
+
+  async mergeMembers(targetId: string, sourceIds: string[]): Promise<void> {
+    if (!sourceIds.length) return;
+    const db = await getDb();
+    const sourceIdsStr = sourceIds.map(() => '?').join(',');
+    
+    // 1. Update session_players
+    await db.run(
+      `UPDATE session_players SET saved_member_id = ? WHERE saved_member_id IN (${sourceIdsStr})`,
+      [targetId, ...sourceIds]
+    );
+
+    // 2. Update room_members
+    const allIds = [targetId, ...sourceIds];
+    const allIdsStr = allIds.map(() => '?').join(',');
+    const rmRes = await db.query(
+      `SELECT room_id, member_id FROM room_members WHERE member_id IN (${allIdsStr})`,
+      allIds
+    );
+    
+    if (rmRes.values && rmRes.values.length > 0) {
+      const roomMap = new Map<string, string[]>();
+      for (const row of rmRes.values) {
+        if (!roomMap.has(row.room_id)) roomMap.set(row.room_id, []);
+        roomMap.get(row.room_id)!.push(row.member_id);
+      }
+      
+      for (const [roomId, members] of roomMap.entries()) {
+        const hasTarget = members.includes(targetId);
+        const sourceMembers = members.filter(m => sourceIds.includes(m));
+        
+        if (sourceMembers.length > 0) {
+          const sourceMembersStr = sourceMembers.map(() => '?').join(',');
+          if (hasTarget) {
+            await db.run(
+              `DELETE FROM room_members WHERE room_id = ? AND member_id IN (${sourceMembersStr})`,
+              [roomId, ...sourceMembers]
+            );
+          } else {
+            const firstSource = sourceMembers[0];
+            await db.run(
+              `UPDATE room_members SET member_id = ? WHERE room_id = ? AND member_id = ?`,
+              [targetId, roomId, firstSource]
+            );
+            if (sourceMembers.length > 1) {
+              const remainingSourceIds = sourceMembers.slice(1);
+              const remainingStr = remainingSourceIds.map(() => '?').join(',');
+              await db.run(
+                `DELETE FROM room_members WHERE room_id = ? AND member_id IN (${remainingStr})`,
+                [roomId, ...remainingSourceIds]
+              );
+            }
+          }
+        }
+      }
+    }
+
+    // 3. Soft delete source members
+    const now = nowISO();
+    await db.run(
+      `UPDATE saved_members SET avatar_seed = '__DELETED__', updated_at = ? WHERE id IN (${sourceIdsStr})`,
+      [now, ...sourceIds]
+    );
+  }
 }
 
 // ────────────────────────── Room Members ──────────────────────
@@ -329,6 +393,53 @@ class LocalRoomRepository implements IRoomRepository {
     const db = await getDb();
     const now = nowISO();
     await db.run(`UPDATE saved_rooms SET deleted_at = ?, updated_at = ? WHERE id = ?`, [now, now, id]);
+  }
+
+  async mergeRooms(targetId: string, sourceIds: string[]): Promise<void> {
+    if (!sourceIds.length) return;
+    const db = await getDb();
+    const sourceIdsStr = sourceIds.map(() => '?').join(',');
+    
+    // 1. Update completed_sessions
+    await db.run(
+      `UPDATE completed_sessions SET saved_room_id = ? WHERE saved_room_id IN (${sourceIdsStr})`,
+      [targetId, ...sourceIds]
+    );
+    
+    // 2. Add unique members
+    const targetRmRes = await db.query(
+      `SELECT member_id, sort_order FROM room_members WHERE room_id = ?`,
+      [targetId]
+    );
+    const targetMemberIds = new Set(targetRmRes.values?.map(m => m.member_id) || []);
+    let maxSortOrder = targetRmRes.values?.length ? Math.max(...targetRmRes.values.map(m => m.sort_order)) : -1;
+    
+    const sourceRmRes = await db.query(
+      `SELECT member_id FROM room_members WHERE room_id IN (${sourceIdsStr})`,
+      sourceIds
+    );
+    const newMembers = new Set<string>();
+    for (const sm of sourceRmRes.values || []) {
+      if (!targetMemberIds.has(sm.member_id)) {
+        newMembers.add(sm.member_id);
+        targetMemberIds.add(sm.member_id);
+      }
+    }
+    
+    if (newMembers.size > 0) {
+      for (const memberId of newMembers) {
+        await db.run(
+          `INSERT INTO room_members (room_id, member_id, sort_order) VALUES (?, ?, ?)`,
+          [targetId, memberId, ++maxSortOrder]
+        );
+      }
+    }
+    
+    // 3. Delete source rooms
+    await db.run(
+      `DELETE FROM saved_rooms WHERE id IN (${sourceIdsStr})`,
+      sourceIds
+    );
   }
 }
 

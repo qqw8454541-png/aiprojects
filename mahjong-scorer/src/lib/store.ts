@@ -87,6 +87,12 @@ interface GameState {
   // Member stats viewing
   viewingMemberId: string | null;
 
+  // Refactoring: Session states
+  isNewRoom: boolean;
+  pendingRoomName: string;
+  editingRoundId: string | null;
+  sessionFinalized: boolean;
+
   // ── Actions ──────────────────────────────────────────────────
 
   // App navigation
@@ -94,7 +100,7 @@ interface GameState {
 
   // Room session
   joinRoom: (code: string) => void;
-  createRoom: (rules: RuleConfig) => void;
+  createRoom: (rules: RuleConfig, opts?: { savedRoomId?: string; isNewRoom?: boolean; pendingRoomName?: string }) => void;
   setRoomName: (name: string) => void;
   updateRules: (rules: RuleConfig) => void;
 
@@ -112,6 +118,8 @@ interface GameState {
   startNewRound: () => void;
   updateRoundInputs: (inputs: string[]) => void;
   completeRound: (results: PlayerResult[]) => void;
+  editRound: (roundId: string) => void;
+  updateRound: (roundId: string, results: PlayerResult[]) => void;
   viewRound: (id: string | null) => void;
   resetScoresKeepPlayers: () => void;
   resetRoom: () => void;
@@ -120,10 +128,13 @@ interface GameState {
   saveCurrentRoom: (overrideName?: string) => Promise<void>;
 
   // Supabase: load a saved room template and initialize session
-  loadSavedRoom: (roomId: string) => Promise<void>;
+  loadSavedRoom: (roomId: string, overrideRules?: RuleConfig) => Promise<void>;
 
   // Supabase: archive completed session
   archiveSession: () => Promise<void>;
+
+  // Session finalization
+  finalizeSession: () => Promise<void>;
 
   // Manage history page
   setViewingHistoryRoomId: (id: string | null) => void;
@@ -188,6 +199,10 @@ export const useGameStore = create<GameState>()(
       manageRoomsMode: 'rooms',
       currentSessionDbId: null,
       viewingMemberId: null,
+      isNewRoom: false,
+      pendingRoomName: 'unnamed',
+      editingRoundId: null,
+      sessionFinalized: false,
 
       // ── Navigation ──────────────────────────────────────────
 
@@ -213,10 +228,14 @@ export const useGameStore = create<GameState>()(
             recentRooms: updatedRecent.slice(0, 10),
             sessionSavedRoomId: null,
             currentSessionDbId: null,
+            isNewRoom: false,
+            pendingRoomName: 'unnamed',
+            editingRoundId: null,
+            sessionFinalized: false,
           };
         }),
 
-      createRoom: (rules) =>
+      createRoom: (rules, opts = {}) =>
         set((state) => {
           const code = generateRoomCode();
           const now = Date.now();
@@ -224,7 +243,7 @@ export const useGameStore = create<GameState>()(
           updatedRecent.unshift({ code, lastActive: now });
           return {
             roomCode: code,
-            roomName: null,
+            roomName: opts.pendingRoomName ?? null,
             rules,
             players: [],
             seats:
@@ -235,8 +254,12 @@ export const useGameStore = create<GameState>()(
             viewingRoundId: null,
             currentPage: 'room',
             recentRooms: updatedRecent.slice(0, 10),
-            sessionSavedRoomId: null,
+            sessionSavedRoomId: opts.savedRoomId ?? null,
             currentSessionDbId: null,
+            isNewRoom: opts.isNewRoom ?? false,
+            pendingRoomName: opts.pendingRoomName ?? 'unnamed',
+            editingRoundId: null,
+            sessionFinalized: false,
           };
         }),
 
@@ -381,11 +404,35 @@ export const useGameStore = create<GameState>()(
             rounds: newRounds,
             viewingRoundId: inProgressId,
             currentPage: 'result',
+            editingRoundId: null, // exit edit mode if we were in one
           };
         });
 
         // Auto-archive to Supabase
         get().archiveSession().catch((e) => console.error('Failed to auto-archive:', e));
+      },
+
+      editRound: (roundId) => set({ editingRoundId: roundId, currentPage: 'score' }),
+
+      updateRound: (roundId, results) => {
+        set((state) => {
+          const roundIdx = state.rounds.findIndex(r => r.id === roundId);
+          if (roundIdx === -1) return state;
+          
+          const newRounds = [...state.rounds];
+          newRounds[roundIdx] = {
+            ...newRounds[roundIdx],
+            results,
+          };
+          
+          return {
+            rounds: newRounds,
+            editingRoundId: null,
+            currentPage: 'room',
+          };
+        });
+        // after setting state, archive it
+        get().archiveSession();
       },
 
       viewRound: (id) => set({ viewingRoundId: id, currentPage: 'result' }),
@@ -468,7 +515,7 @@ export const useGameStore = create<GameState>()(
         await get().archiveSession();
       },
 
-      loadSavedRoom: async (roomId: string) => {
+      loadSavedRoom: async (roomId: string, overrideRules?: RuleConfig) => {
         const repo = await getRepository();
         const state = get();
         const room = await repo.rooms.get(roomId);
@@ -487,7 +534,7 @@ export const useGameStore = create<GameState>()(
           savedMemberId: m.id,
         }));
 
-        const rules = room.rules;
+        const rules = overrideRules ?? room.rules;
         const limit = rules.mode === '3-player' ? 3 : 4;
         const seats = initialSeats.slice(0, limit).map((s, i) => ({
           ...s,
@@ -507,6 +554,16 @@ export const useGameStore = create<GameState>()(
           sessionSavedRoomId: roomId,
           currentSessionDbId: null,
         });
+      },
+
+      finalizeSession: async () => {
+        set({ sessionFinalized: true });
+        
+        const state = get();
+        if (state.isNewRoom && state.pendingRoomName) {
+           await state.saveCurrentRoom(state.pendingRoomName);
+        }
+        await state.archiveSession();
       },
 
       archiveSession: async () => {
@@ -576,6 +633,49 @@ export const useGameStore = create<GameState>()(
       name: 'mahjong-scorer-storage',
       // Migrate old storage shape
       version: 2,
+      partialize: (state) => {
+        // Base fields we always want to persist (app-level state)
+        const base = {
+          deviceId: state.deviceId,
+          currentPage: state.currentPage,
+          recentRooms: state.recentRooms,
+          manageRoomsMode: state.manageRoomsMode,
+        };
+
+        // If it's a native platform, we DO NOT persist room/session data.
+        // It relies entirely on the DB and what's in memory.
+        import('./repo-factory').then(({ isNativePlatform }) => {
+           // We can't do async inside partialize safely, but we can do a synchronous check
+           // using the existing isNativePlatform implementation if it's available.
+        });
+        
+        // Actually, we can just require the file since it's a function.
+        // But to avoid circular deps or lazy loading issues in zustand initialization,
+        // let's do a simple inline check similar to what isNativePlatform does.
+        const isNative = typeof window !== 'undefined' && (window as any).Capacitor && 
+          (typeof (window as any).Capacitor.isNativePlatform === 'function' ? (window as any).Capacitor.isNativePlatform() : (window as any).Capacitor.isNativePlatform === true);
+          
+        if (!isNative) {
+          // Web: persist session data to prevent data loss on browser refresh
+          return {
+            ...base,
+            roomCode: state.roomCode,
+            roomName: state.roomName,
+            rules: state.rules,
+            players: state.players,
+            seats: state.seats,
+            rounds: state.rounds,
+            sessionSavedRoomId: state.sessionSavedRoomId,
+            currentSessionDbId: state.currentSessionDbId,
+            isNewRoom: state.isNewRoom,
+            pendingRoomName: state.pendingRoomName,
+            sessionFinalized: state.sessionFinalized,
+          };
+        }
+
+        // Native (Android/iOS): Only persist base, drop the session data on close
+        return base;
+      },
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         if (version < 2) {
