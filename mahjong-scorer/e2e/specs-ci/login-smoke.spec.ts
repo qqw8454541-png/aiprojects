@@ -49,6 +49,13 @@ test.describe('Production Login Smoke Test', () => {
     await expect(sendCodeBtn).toBeEnabled({ timeout: 3_000 });
     await sendCodeBtn.click();
 
+    // ──── 6.5. Agree to Terms Consent ─────────────────────────────
+    const agreeBtn = page.locator('button', {
+      hasText: /同意して送信|同意并发送|Agree & Send/
+    });
+    await expect(agreeBtn).toBeVisible({ timeout: 5_000 });
+    await agreeBtn.click();
+
     // ──── 7. Wait for OTP input and enter code ────────────────────
     const otpInput = page.locator('input[inputmode="numeric"][maxlength="6"]');
     await expect(otpInput).toBeVisible({ timeout: 15_000 });
