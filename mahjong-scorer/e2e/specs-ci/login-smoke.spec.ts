@@ -80,7 +80,7 @@ test.describe('Production Login Smoke Test', () => {
 
     // ──── 10. Verify Sign Out button is present (confirms auth) ───
     const signOutBtn = page.locator('button', {
-      hasText: /Sign Out|ログアウト|登出/,
+      hasText: /log out|sign out|ログアウト|退出登录|登出/i,
     });
     await expect(signOutBtn).toBeVisible({ timeout: 5_000 });
 
