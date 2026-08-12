@@ -20,7 +20,7 @@ import { billingService } from './billing-service';
 import { getSavedLocale, translate } from './i18n';
 import { showToast } from './toast-store';
 
-export type AuthProvider = 'email' | 'phone';
+export type AuthProvider = 'google' | 'apple' | 'email' | 'phone';
 
 // ────────────────────────── Types ──────────────────────────────
 
@@ -114,7 +114,23 @@ export const useAuthStore = create<AuthState>()(
       // ── Auth Actions ────────────────────────────────────────
 
       login: async (provider, credential?) => {
-        return { success: false, error: 'unsupported_provider' };
+        try {
+          if (provider === 'google' || provider === 'apple') {
+            const { error } = await supabase.auth.signInWithOAuth({
+              provider,
+              options: {
+                redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+              }
+            });
+            if (error) throw error;
+            // For OAuth, the redirect handles the session, so we don't set user immediately here.
+            return { success: true };
+          }
+          
+          return { success: false, error: 'unsupported_provider' };
+        } catch (e: any) {
+          return { success: false, error: e.message || 'unknown_error' };
+        }
       },
 
       logout: async () => {

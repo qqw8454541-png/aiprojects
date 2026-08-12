@@ -7,6 +7,8 @@ import { supabase, onSessionRecovered } from '@/lib/supabase';
 import { getPlatformType } from '@/lib/repo-factory';
 import { syncEngine, onSyncStateChange } from '@/lib/sync-engine';
 import { useI18n } from '@/lib/i18n';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CloudFog } from 'lucide-react';
 
 // Helper to omit functions, transient UI state, and viewingRoundId that shouldn't override other clients
 const getDbState = (state: ReturnType<typeof useGameStore.getState>) => {
@@ -265,62 +267,21 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   return (
     <>
       {children}
-      {/* Sync Loading Overlay — 同步时全屏遮罩，禁止用户操作 */}
-      {isSyncing && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 99999,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            gap: '16px',
-          }}
-        >
-          {/* Spinner */}
-          <div
-            style={{
-              width: '48px',
-              height: '48px',
-              border: '4px solid rgba(255,255,255,0.2)',
-              borderTopColor: '#10b981',
-              borderRadius: '50%',
-              animation: 'sync-spin 0.8s linear infinite',
-            }}
-          />
-          <div
-            style={{
-              color: 'white',
-              fontSize: '16px',
-              fontWeight: 700,
-              letterSpacing: '0.05em',
-            }}
+      {/* Sync Loading Banner — Lightweight non-blocking banner for incremental sync */}
+      <AnimatePresence>
+        {isSyncing && (
+          <motion.div
+            initial={{ opacity: 0, y: -40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -40 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            className="fixed top-[env(safe-area-inset-top,20px)] left-1/2 -translate-x-1/2 z-[100000] flex items-center gap-2 bg-blue-500/95 text-white px-4 py-2 rounded-full shadow-lg shadow-blue-900/20 backdrop-blur-sm pointer-events-none"
           >
-            {t('sync.syncing' as Parameters<typeof t>[0]) || 'Syncing data...'}
-          </div>
-          <div
-            style={{
-              color: 'rgba(255,255,255,0.6)',
-              fontSize: '12px',
-              maxWidth: '240px',
-              textAlign: 'center',
-              lineHeight: '1.4',
-            }}
-          >
-            {t('sync.pleaseWait' as Parameters<typeof t>[0]) || 'Please do not close the app'}
-          </div>
-          <style>{`
-            @keyframes sync-spin {
-              to { transform: rotate(360deg); }
-            }
-          `}</style>
-        </div>
-      )}
+            <CloudFog className="w-4 h-4 animate-pulse" />
+            <span className="text-xs font-bold tracking-wider">{t('sync.syncingTitle' as any) || 'SYNCING'}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

@@ -24,7 +24,7 @@ export default function AuthModal() {
   const { t, locale } = useI18n();
   const { showAuthModal, authModalContext, closeAuthModal, login } = useAuthStore();
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<'main' | 'email' | 'phone'>('main');
+  const [mode, setMode] = useState<'email' | 'phone'>('email');
   const [inputValue, setInputValue] = useState('');
   const [verifyCode, setVerifyCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
@@ -33,6 +33,7 @@ export default function AuthModal() {
   const [errorMsg, setErrorMsg] = useState('');
   const [countryCode, setCountryCode] = useState('+81');
   const [showCountrySelect, setShowCountrySelect] = useState(false);
+  const [showTermsConsent, setShowTermsConsent] = useState(false);
 
   const getFormattedPhone = () => {
     return `${countryCode}${inputValue.replace(/^0+/, '').replace(/\D/g, '')}`;
@@ -56,21 +57,14 @@ export default function AuthModal() {
     return t(key as Parameters<typeof t>[0]);
   };
 
-  const handleProviderLogin = async (provider: 'google' | 'apple', credential?: string) => {
-    setLoading(true);
+  const handleSendCodeRequest = () => {
+    if (!inputValue.trim()) return;
     setErrorMsg('');
-    try {
-      const res = await login(provider, credential);
-      if (!res.success) {
-        setErrorMsg(`Login failed: ${res.error}`);
-      }
-    } finally {
-      setLoading(false);
-      resetForm();
-    }
+    setShowTermsConsent(true);
   };
 
   const handleSendCode = async () => {
+    setShowTermsConsent(false);
     if (!inputValue.trim()) return;
     setSendingCode(true);
     setErrorMsg('');
@@ -130,12 +124,13 @@ export default function AuthModal() {
   };
 
   const resetForm = () => {
-    setMode('main');
+    setMode('email');
     setInputValue('');
     setVerifyCode('');
     setCodeSent(false);
     setErrorMsg('');
     setShowCountrySelect(false);
+    setShowTermsConsent(false);
   };
 
   if (!showAuthModal) return null;
@@ -168,64 +163,29 @@ export default function AuthModal() {
 
           {/* Body */}
           <div className="px-5 pb-5 space-y-3">
-            {mode === 'main' && (
-              <>
-                {/* Apple Sign In */}
-                <button
-                  onClick={() => handleProviderLogin('apple')}
-                  disabled={true}
-                  className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl bg-black text-white font-bold text-sm transition-all hover:bg-zinc-800 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-black disabled:active:scale-100"
-                >
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                    <>
-                      <span className="text-lg">🍎</span>
-                      {t('auth.apple' as Parameters<typeof t>[0])}
-                    </>
-                  )}
-                </button>
-
-                {/* Google Sign In */}
-                <button
-                  onClick={() => handleProviderLogin('google')}
-                  disabled={true}
-                  className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-bold text-sm border border-zinc-200 dark:border-zinc-700 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-700 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-zinc-800 disabled:active:scale-100"
-                >
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                    <>
-                      <span className="text-lg">🔵</span>
-                      {t('auth.google' as Parameters<typeof t>[0])}
-                    </>
-                  )}
-                </button>
-
-                {/* Divider */}
-                <div className="flex items-center gap-3 py-1">
-                  <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-700" />
-                  <span className="text-xs text-zinc-400 dark:text-zinc-500 font-medium">OR</span>
-                  <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-700" />
-                </div>
-
-                {/* Email */}
-                <button
-                  onClick={() => setMode('email')}
-                  disabled={true}
-                  className="w-full flex items-center justify-center gap-3 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-sm transition-all hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zinc-100 dark:disabled:hover:bg-zinc-800 disabled:active:scale-100"
-                >
-                  <span>📧</span>
-                  {t('auth.email' as Parameters<typeof t>[0])}
-                </button>
-
-                {/* Phone */}
-                <button
-                  onClick={() => setMode('phone')}
-                  disabled={loading}
-                  className="w-full flex items-center justify-center gap-3 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium text-sm transition-all hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-[0.97]"
-                >
-                  <span>📱</span>
-                  {t('auth.phone' as Parameters<typeof t>[0])}
-                </button>
-              </>
-            )}
+            {/* Tab Switcher */}
+            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl mb-4 max-w-sm w-full mx-auto shadow-inner">
+              <button
+                onClick={() => { setMode('email'); setErrorMsg(''); setShowCountrySelect(false); }}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-bold transition-all duration-300 ${
+                  mode === 'email'
+                    ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-800 dark:text-zinc-200'
+                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                }`}
+              >
+                📧 {t('auth.tabEmail' as any)}
+              </button>
+              <button
+                onClick={() => { setMode('phone'); setErrorMsg(''); setShowCountrySelect(false); }}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-bold transition-all duration-300 ${
+                  mode === 'phone'
+                    ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-800 dark:text-zinc-200'
+                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                }`}
+              >
+                📱 {t('auth.tabPhone' as any)}
+              </button>
+            </div>
 
             {/* Country Selector View */}
             {showCountrySelect && mode === 'phone' && (
@@ -245,7 +205,7 @@ export default function AuthModal() {
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{c.flag}</span>
                       <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {t(c.tKey as any)}
+                        {t(c.tKey as Parameters<typeof t>[0])}
                       </span>
                     </div>
                     <span className="text-sm text-zinc-500 font-mono">{c.code}</span>
@@ -255,14 +215,9 @@ export default function AuthModal() {
             )}
 
             {/* Email / Phone verification form */}
-            {(mode === 'email' || mode === 'phone') && !showCountrySelect && (
+            {!showCountrySelect && (
               <div className="space-y-3">
-                <button
-                  onClick={resetForm}
-                  className="text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
-                >
-                  ← {t('common.back')}
-                </button>
+
 
                 {errorMsg && (
                   <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-lg border border-red-100 dark:border-red-800/50">
@@ -298,7 +253,7 @@ export default function AuthModal() {
                     />
                   </div>
                   <button
-                    onClick={handleSendCode}
+                    onClick={handleSendCodeRequest}
                     disabled={!inputValue.trim() || sendingCode || countdown > 0}
                     className="px-4 py-3 rounded-xl bg-emerald-500 text-white font-bold transition-all hover:bg-emerald-400 active:scale-[0.97] disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:text-zinc-500 whitespace-nowrap sm:min-w-[120px]"
                   >
@@ -349,11 +304,67 @@ export default function AuthModal() {
             )}
 
             {/* Footer */}
-            <p className="text-[10px] text-zinc-400 dark:text-zinc-600 text-center pt-2 leading-relaxed">
-              {t('auth.terms' as Parameters<typeof t>[0])}
-            </p>
+            <div className="pt-2 flex flex-col items-center justify-center gap-1.5">
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-600 text-center leading-relaxed">
+                {t('auth.terms' as Parameters<typeof t>[0])}
+              </p>
+              <div className="flex items-center gap-3 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                <a href="https://mahjong-scorer.eastree.co.jp/terms.html" target="_blank" rel="noreferrer" className="hover:text-emerald-500 transition-colors underline underline-offset-2">
+                  {t('auth.termsTitle' as any)}
+                </a>
+                <a href="https://mahjong-scorer.eastree.co.jp/privacy.html" target="_blank" rel="noreferrer" className="hover:text-emerald-500 transition-colors underline underline-offset-2">
+                  {t('auth.privacyTitle' as any)}
+                </a>
+              </div>
+            </div>
           </div>
         </motion.div>
+
+        {/* Terms Consent Popup */}
+        <AnimatePresence>
+          {showTermsConsent && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[80] glass-overlay flex items-center justify-center p-4"
+              onClick={() => setShowTermsConsent(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0, y: 10 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 10 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl w-full max-w-[320px] overflow-hidden shadow-2xl p-6 text-center"
+              >
+                <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                  📄
+                </div>
+                <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-100 mb-2">
+                  {t('auth.termsConsentTitle' as any)}
+                </h3>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6 leading-relaxed">
+                  {t('auth.termsConsentBody' as any)}
+                </p>
+                
+                <div className="space-y-2.5">
+                  <button
+                    onClick={handleSendCode}
+                    className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-bold transition-all"
+                  >
+                    {t('auth.termsConsentAgree' as any)}
+                  </button>
+                  <button
+                    onClick={() => setShowTermsConsent(false)}
+                    className="w-full py-3.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
+                  >
+                    {t('auth.termsConsentCancel' as any)}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </AnimatePresence>
   );

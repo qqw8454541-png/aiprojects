@@ -4,9 +4,9 @@ const config: CapacitorConfig = {
   appId: 'com.mahjongscorer.app',
   appName: 'デジタル点棒',
   webDir: 'out',
-  backgroundColor: '#09090b',
+  backgroundColor: '#ffffff',
   android: {
-    backgroundColor: '#09090b',
+    backgroundColor: '#ffffff',
     allowMixedContent: true,
   },
   server: {

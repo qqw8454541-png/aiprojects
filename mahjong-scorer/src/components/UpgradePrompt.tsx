@@ -27,8 +27,28 @@ export default function UpgradePrompt() {
   const [storePrice, setStorePrice] = useState<string | null>(null);
   useEffect(() => {
     if (showUpgradePrompt && billingService.isNative) {
-      const price = billingService.getLocalizedPrice();
-      if (price) setStorePrice(price);
+      let timer: any;
+      let mounted = true;
+
+      const fetchPrice = () => {
+        const price = billingService.getLocalizedPrice();
+        if (price && mounted) {
+          setStorePrice(price);
+          clearInterval(timer);
+        }
+      };
+
+      // Ensure SDK is initialized before trying to fetch price
+      billingService.init().then(() => {
+        if (!mounted) return;
+        fetchPrice(); // Try immediately
+        timer = setInterval(fetchPrice, 1000); // Poll every second if not yet loaded
+      });
+      
+      return () => {
+        mounted = false;
+        clearInterval(timer);
+      };
     }
   }, [showUpgradePrompt]);
 
@@ -77,6 +97,7 @@ export default function UpgradePrompt() {
           if (!res.success) {
             console.error('Sync failed:', res.error);
           }
+          setSyncState({ isSyncing: false, progress: null });
         });
       }
 
@@ -244,12 +265,19 @@ export default function UpgradePrompt() {
                     : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-900/20 hover:brightness-110'
               }`}
             >
-              {isPro
-                ? (t('upgrade.alreadyPro' as Parameters<typeof t>[0]))
-                : purchasing
-                  ? '...'
-                  : (t('upgrade.buyPro' as Parameters<typeof t>[0]))
-              }
+              {isPro ? (
+                t('upgrade.alreadyPro' as Parameters<typeof t>[0])
+              ) : purchasing ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {t('subscription.canceling' as Parameters<typeof t>[0])}
+                </>
+              ) : (
+                t('upgrade.buyPro' as Parameters<typeof t>[0])
+              )}
             </button>
 
             {/* Restore Purchases — App Store 审核强制要求 */}

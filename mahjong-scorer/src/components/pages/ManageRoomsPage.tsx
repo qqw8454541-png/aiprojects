@@ -11,6 +11,9 @@ import { safeRandomUUID } from '@/lib/utils';
 import { getRepository } from '@/lib/repo-factory';
 import type { DbSavedRoom, DbSavedMember } from '@/lib/repository';
 import { hapticWarning } from '@/lib/haptics';
+import { MergeMembersModal } from '@/components/MergeMembersModal';
+import { MergeRoomsModal } from '@/components/MergeRoomsModal';
+import { useSyncGuard } from '@/lib/use-sync-guard';
 
 export default function ManageRoomsPage() {
   const { t } = useI18n();
@@ -26,6 +29,9 @@ export default function ManageRoomsPage() {
   const [editingMember, setEditingMember] = useState<DbSavedMember | null>(null);
   const [editMemberName, setEditMemberName] = useState('');
   const [editMemberAvatar, setEditMemberAvatar] = useState('');
+  const [mergeMembersOpen, setMergeMembersOpen] = useState(false);
+  const [mergeRoomsOpen, setMergeRoomsOpen] = useState(false);
+  const { guardedAction } = useSyncGuard();
 
   const reload = async () => {
     if (!deviceId) return;
@@ -66,48 +72,56 @@ export default function ManageRoomsPage() {
     return () => document.removeEventListener('visibilitychange', onWake);
   }, []);
 
-  const handleDelete = async (id: string, name: string) => {
-    hapticWarning();
-    if (!confirm(t('manage.deleteRoomConfirm'))) return;
-    const repo = await getRepository();
-    await repo.rooms.delete(id);
-    await reload();
-  };
-
-  const handleSaveName = async (id: string) => {
-    if (!editName.trim()) return;
-
-    if (rooms.some(r => r.id !== id && r.name.toLowerCase() === editName.trim().toLowerCase())) {
-      alert(t('manage.duplicateRoomName' as Parameters<typeof t>[0]));
-      return;
-    }
-
-    const repo = await getRepository();
-    await repo.rooms.update(id, { name: editName.trim() });
-    setEditingId(null);
-    await reload();
-  };
-
-  const handleSaveMember = async () => {
-    if (!editingMember || !editMemberName.trim()) return;
-    const repo = await getRepository();
-    await repo.members.upsert({
-      id: editingMember.id,
-      device_id: editingMember.device_id,
-      name: editMemberName.trim(),
-      avatar_seed: editMemberAvatar,
-      updated_at: new Date().toISOString(),
+  const handleDelete = (id: string, name: string) => {
+    guardedAction(async () => {
+      hapticWarning();
+      if (!confirm(t('manage.deleteRoomConfirm'))) return;
+      const repo = await getRepository();
+      await repo.rooms.delete(id);
+      await reload();
     });
-    setEditingMember(null);
-    await reload();
   };
 
-  const handleDeleteMember = async (id: string, skipConfirm = false) => {
-    hapticWarning();
-    if (!skipConfirm && !confirm(t('manage.deleteMemberConfirm' as Parameters<typeof t>[0]))) return;
-    const repo = await getRepository();
-    await repo.members.delete(id);
-    await reload();
+  const handleSaveName = (id: string) => {
+    guardedAction(async () => {
+      if (!editName.trim()) return;
+
+      if (rooms.some(r => r.id !== id && r.name.toLowerCase() === editName.trim().toLowerCase())) {
+        alert(t('manage.duplicateRoomName' as Parameters<typeof t>[0]));
+        return;
+      }
+
+      const repo = await getRepository();
+      await repo.rooms.update(id, { name: editName.trim() });
+      setEditingId(null);
+      await reload();
+    });
+  };
+
+  const handleSaveMember = () => {
+    guardedAction(async () => {
+      if (!editingMember || !editMemberName.trim()) return;
+      const repo = await getRepository();
+      await repo.members.upsert({
+        id: editingMember.id,
+        device_id: editingMember.device_id,
+        name: editMemberName.trim(),
+        avatar_seed: editMemberAvatar,
+        updated_at: new Date().toISOString(),
+      });
+      setEditingMember(null);
+      await reload();
+    });
+  };
+
+  const handleDeleteMember = (id: string, skipConfirm = false) => {
+    guardedAction(async () => {
+      hapticWarning();
+      if (!skipConfirm && !confirm(t('manage.deleteMemberConfirm' as Parameters<typeof t>[0]))) return;
+      const repo = await getRepository();
+      await repo.members.delete(id);
+      await reload();
+    });
   };
 
   const handleViewHistory = (id: string) => {
@@ -141,7 +155,15 @@ export default function ManageRoomsPage() {
       ) : (
         <>
           {manageRoomsMode === 'rooms' && (
-            rooms.length === 0 ? (
+            <div className="space-y-4">
+              <button
+                onClick={() => setMergeRoomsOpen(true)}
+                className="w-full py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 font-bold transition-colors flex items-center justify-center gap-2 text-zinc-700 dark:text-zinc-300 hover:border-emerald-500 hover:text-emerald-600 shadow-sm"
+              >
+                <span>🔗</span>
+                {t('manage.mergeSameRoomBtn' as any)}
+              </button>
+              {rooms.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
                 <div className="text-5xl">⚙️</div>
                 <p className="font-bold text-zinc-700 dark:text-zinc-300">{t('manage.empty')}</p>
@@ -211,11 +233,19 @@ export default function ManageRoomsPage() {
             </div>
           ))}
               </div>
-            )
-          )}
+            )}
+          </div>
+        )}
 
       {manageRoomsMode === 'members' && (
         <div className="space-y-4">
+          <button
+            onClick={() => setMergeMembersOpen(true)}
+            className="w-full py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 font-bold transition-colors flex items-center justify-center gap-2 text-zinc-700 dark:text-zinc-300 hover:border-emerald-500 hover:text-emerald-600 shadow-sm"
+          >
+            <span>🔗</span>
+            {t('manage.mergeSameNameBtn' as any)}
+          </button>
           {(() => {
             return (
               <button
@@ -323,6 +353,25 @@ export default function ManageRoomsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      
+      {deviceId && (
+        <>
+          <MergeMembersModal
+            deviceId={deviceId}
+            isOpen={mergeMembersOpen}
+            onClose={() => setMergeMembersOpen(false)}
+            onSuccess={reload}
+            members={members}
+          />
+          <MergeRoomsModal
+            deviceId={deviceId}
+            isOpen={mergeRoomsOpen}
+            onClose={() => setMergeRoomsOpen(false)}
+            onSuccess={reload}
+            rooms={rooms}
+          />
+        </>
+      )}
     </div>
   );
 }

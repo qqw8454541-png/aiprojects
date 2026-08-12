@@ -10,6 +10,7 @@ import type { Player } from '@/lib/store';
 import { getRepository } from '@/lib/repo-factory';
 import type { DbSavedMember } from '@/lib/repository';
 import { hapticMedium, hapticWarning, hapticSuccess } from '@/lib/haptics';
+import { useSyncGuard } from '@/lib/use-sync-guard';
 
 export default function RoomPage() {
   const { t } = useI18n();
@@ -33,6 +34,7 @@ export default function RoomPage() {
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [showNamingModal, setShowNamingModal] = useState(false);
   const [pendingRoomName, setPendingRoomName] = useState('');
+  const { guardedAction } = useSyncGuard();
 
   useEffect(() => {
     if (!deviceId) return;
@@ -444,40 +446,42 @@ export default function RoomPage() {
                     {t('room.cancel')}
                   </button>
                   <button
-                    onClick={async () => {
-                      setShowEndConfirm(false);
-                      const limit = rules?.mode === '3-player' ? 3 : 4;
-                      const seatedPlayers = seats
-                        .slice(0, limit)
-                        .map((s) => players.find((p) => p.id === s.playerId))
-                        .filter(Boolean);
+                    onClick={() => {
+                      guardedAction(async () => {
+                        setShowEndConfirm(false);
+                        const limit = rules?.mode === '3-player' ? 3 : 4;
+                        const seatedPlayers = seats
+                          .slice(0, limit)
+                          .map((s) => players.find((p) => p.id === s.playerId))
+                          .filter(Boolean);
 
-                      if (seatedPlayers.length === limit) {
-                        const repo = await getRepository();
-                        const existingRooms = await repo.rooms.list(deviceId);
-                        const currentNames = [...players.map(p => p!.name)].sort();
+                        if (seatedPlayers.length === limit) {
+                          const repo = await getRepository();
+                          const existingRooms = await repo.rooms.list(deviceId);
+                          const currentNames = [...players.map(p => p!.name)].sort();
 
-                        let isDuplicate = false;
-                        for (const room of existingRooms) {
-                          if (!room.members) continue;
-                          const activeMembers = room.members.filter(m => m.avatar_seed !== '__DELETED__');
-                          const roomNames = [...activeMembers.map(m => m.name)].sort();
-                          if (currentNames.length > 0 && currentNames.length === roomNames.length && currentNames.every((name, i) => name === roomNames[i])) {
-                            isDuplicate = true;
-                            break;
+                          let isDuplicate = false;
+                          for (const room of existingRooms) {
+                            if (!room.members) continue;
+                            const activeMembers = room.members.filter(m => m.avatar_seed !== '__DELETED__');
+                            const roomNames = [...activeMembers.map(m => m.name)].sort();
+                            if (currentNames.length > 0 && currentNames.length === roomNames.length && currentNames.every((name, i) => name === roomNames[i])) {
+                              isDuplicate = true;
+                              break;
+                            }
+                          }
+
+                          if (!isDuplicate) {
+                            const defaultName = currentNames.join('、') + t('room.defaultRoomNameSuffix');
+                            setPendingRoomName(defaultName);
+                            setShowNamingModal(true);
+                            return; // Don't reset yet — wait for naming modal
                           }
                         }
 
-                        if (!isDuplicate) {
-                          const defaultName = currentNames.join('、') + t('room.defaultRoomNameSuffix');
-                          setPendingRoomName(defaultName);
-                          setShowNamingModal(true);
-                          return; // Don't reset yet — wait for naming modal
-                        }
-                      }
-
-                      resetRoom();
-                      setPage('personal-menu');
+                        resetRoom();
+                        setPage('personal-menu');
+                      });
                     }}
                     className="flex-1 py-3 rounded-xl bg-rose-500 text-white font-bold transition hover:bg-rose-400 active:scale-[0.97]"
                   >
@@ -529,13 +533,15 @@ export default function RoomPage() {
                   onChange={(e) => setPendingRoomName(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && pendingRoomName.trim()) {
-                      setShowNamingModal(false);
-                      saveCurrentRoom(pendingRoomName.trim())
-                        .catch((err) => console.error('Failed to save room:', err))
-                        .finally(() => {
-                          resetRoom();
-                          setPage('personal-menu');
-                        });
+                      guardedAction(() => {
+                        setShowNamingModal(false);
+                        saveCurrentRoom(pendingRoomName.trim())
+                          .catch((err) => console.error('Failed to save room:', err))
+                          .finally(() => {
+                            resetRoom();
+                            setPage('personal-menu');
+                          });
+                      });
                     }
                   }}
                   className="w-full rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -554,14 +560,16 @@ export default function RoomPage() {
                   <button
                     onClick={() => {
                       if (!pendingRoomName.trim()) return;
-                      setShowNamingModal(false);
-                      saveCurrentRoom(pendingRoomName.trim())
-                        .then(() => hapticSuccess())
-                        .catch((err) => console.error('Failed to save room:', err))
-                        .finally(() => {
-                          resetRoom();
-                          setPage('personal-menu');
-                        });
+                      guardedAction(() => {
+                        setShowNamingModal(false);
+                        saveCurrentRoom(pendingRoomName.trim())
+                          .then(() => hapticSuccess())
+                          .catch((err) => console.error('Failed to save room:', err))
+                          .finally(() => {
+                            resetRoom();
+                            setPage('personal-menu');
+                          });
+                      });
                     }}
                     className="flex-1 py-3 rounded-xl bg-emerald-500 text-white font-bold transition hover:bg-emerald-400 active:scale-[0.97]"
                   >

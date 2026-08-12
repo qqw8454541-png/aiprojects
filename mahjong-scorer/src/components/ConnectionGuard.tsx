@@ -17,6 +17,7 @@ import { sessionManager, type SessionState } from '@/lib/session-manager';
 import { useAuthStore } from '@/lib/auth-store';
 import { emitSessionRecovered } from '@/lib/supabase';
 import { useI18n } from '@/lib/i18n';
+import { Capacitor } from '@capacitor/core';
 
 export default function ConnectionGuard() {
   const { t } = useI18n();
@@ -87,6 +88,10 @@ export default function ConnectionGuard() {
       window.location.reload();
     }
   };
+
+  // 如果是在原生 App 壳里（通过 Capacitor 打包），则完全不渲染恢复 UI，避免影响体验
+  const isNative = Capacitor.isNativePlatform();
+  if (isNative) return null;
 
   return (
     <AnimatePresence>
