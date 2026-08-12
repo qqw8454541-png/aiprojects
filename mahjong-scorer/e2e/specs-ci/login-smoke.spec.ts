@@ -71,7 +71,7 @@ test.describe('Production Login Smoke Test', () => {
     // ──── 9. Verify login success ─────────────────────────────────
     // After login, user info button should appear instead of login button
     const userInfoSection = page.locator('button', {
-      hasText: /Phone User|Testuser/,
+      hasText: /818012345678/,
     });
     await expect(userInfoSection).toBeVisible({ timeout: 20_000 });
 
